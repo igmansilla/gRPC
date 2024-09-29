@@ -1,0 +1,34 @@
+
+syntax = "proto3";
+
+import "empty.proto";
+
+// Mensaje para la entidad Producto
+message Producto {
+    int64 id = 1;                 // ID autogenerado
+    string nombre = 2;            // Nombre del producto
+    string codigo = 3;            // Código único de 10 caracteres
+    string talle = 4;             // Talle del producto
+    string foto = 5;              // URL o path a la foto del producto
+    string color = 6;             // Color del producto
+    
+     // Lista de IDs de tiendas donde se encuentra el producto
+     repeated string tienda_ids = 7;
+}
+
+message ProductoList {
+    repeated Producto productos = 1;
+}
+
+
+// Servicios para Producto
+service ProductoService {
+    rpc CreateProducto(Producto) returns (Producto);
+    rpc GetProducto(Producto) returns (Producto);
+    rpc UpdateProducto(Producto) returns (Producto);
+    rpc DeleteProducto(Producto) returns (Producto);
+    rpc ListProductos(Empty) returns (ProductoList);
+}
+
+
+

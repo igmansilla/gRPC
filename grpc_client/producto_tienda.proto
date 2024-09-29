@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+import "empty.proto";
+
+// Mensaje para la entidad ProductoTienda
+message ProductoTienda {
+    int64 id = 1;                 // ID autogenerado
+    int64 producto_id = 2;        // ID del producto
+    string tienda_id = 3;         // Código de la tienda
+    string color = 4;             // Color del producto
+    string talle = 5;             // Talle del producto
+    int32 cantidad = 6;           // Cantidad de stock en la tienda
+}
+
+message ProductoTiendaList {
+    repeated ProductoTienda productos = 1;
+}
+
+
+// Servicios para ProductoTienda
+service ProductoTiendaService {
+    rpc CreateProductoTienda(ProductoTienda) returns (ProductoTienda);
+    rpc GetProductoTienda(ProductoTienda) returns (ProductoTienda);
+    rpc UpdateProductoTienda(ProductoTienda) returns (ProductoTienda);
+    rpc DeleteProductoTienda(ProductoTienda) returns (ProductoTienda);
+    rpc ListProductoTiendas(Empty) returns (ProductoTiendaList);
+}

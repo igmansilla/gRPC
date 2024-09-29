@@ -1,0 +1,27 @@
+{
+  "name": "grpc_client",
+  "version": "1.0.0",
+  "description": "cliente grpc",
+  "main": "index.js",
+  "scripts": {
+    "start": "node cliente.js",
+    "dev": "nodemon cliente.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@grpc/grpc-js": "^1.11.2",
+    "@grpc/proto-loader": "^0.7.13",
+    "ejs": "^3.1.10",
+    "express": "^4.21.0",
+    "express-session": "^1.18.0",
+    "grpc_client": "file:",
+    "grpc-tools": "^1.12.4",
+    "kafkajs": "^2.2.4",
+    "lit": "^3.2.0",
+    "protoc-gen-js": "^3.21.2"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.7"
+  }
+}

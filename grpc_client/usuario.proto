@@ -1,0 +1,37 @@
+syntax = "proto3";
+
+import "empty.proto";
+
+message Usuario {
+    int64 id = 1;                 // ID autogenerado
+    string nombreUsuario = 2;     // Nombre de usuario único
+    string contrasena = 3;        // Contraseña del usuario
+    string tienda_id = 4;         // Código de la tienda
+    string nombre = 5;            // Nombre del usuario
+    string apellido = 6;          // Apellido del usuario
+    bool habilitado = 7;          // Estado del usuario (habilitado/deshabilitado)
+}
+
+
+message UsuarioList {
+    repeated Usuario usuarios = 1;
+}
+
+// Servicios para Usuario
+service UsuarioService {
+    rpc CreateUsuario(Usuario) returns (Usuario);
+    rpc GetUsuario(Usuario) returns (Usuario);
+    rpc UpdateUsuario(Usuario) returns (Usuario);
+    rpc DeleteUsuario(Usuario) returns (Usuario);
+    rpc ListUsuarios(Empty) returns (UsuarioList);
+    
+}
+
+message LoginRequest {
+  string nombreUsuario = 1;
+  string contrasena = 2;
+}
+
+message LoginResponse {
+  bool success = 1;
+}

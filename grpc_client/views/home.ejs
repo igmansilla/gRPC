@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script type="module" src="https://cdn.skypack.dev/lit"></script>
+    <script type="module" src="../components/lit-tiendas/lit-tiendas.js"></script>
+    <script type="module" src="../components/lit-productos/lit-productos.js"></script>
+    <script type="module" src="../components/lit-usuarios/lit-usuarios.js"></script>
+    <script type="module" src="../components/lit-orden-compra/lit-orden-compra.js"></script> <!-- Incluir nuevo componente -->
+    <title>Administración de Tiendas y Productos</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+
+        header {
+            background: #333;
+            color: #fff;
+            padding: 1rem 0;
+        }
+
+        .header-container {
+            width: 80%;
+            margin: auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header-buttons {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .header-buttons button {
+            background: #555;
+            color: white;
+            border: none;
+            padding: 1rem;
+            cursor: pointer;
+            border-radius: 4px;
+            font-size: 1rem;
+        }
+
+        .header-buttons button:hover {
+            background: #777;
+        }
+
+        .logout-button {
+            background: #d9534f;
+            color: white;
+            border: none;
+            padding: 0.8rem 1rem;
+            cursor: pointer;
+            border-radius: 50%;
+            font-size: 1.2rem;
+        }
+
+        .logout-button:hover {
+            background: #c9302c;
+        }
+
+        .logout-icon {
+            font-size: 1.5rem;
+        }
+
+        .content {
+            width: 80%;
+            margin: auto;
+            padding: 1rem;
+            min-height: 400px;
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <div class="header-container">
+            <div class="header-buttons">
+                <button onclick="renderComponent('lit-tiendas')">Tiendas</button>
+                <button onclick="renderComponent('lit-productos')">Productos</button>
+                <button onclick="renderComponent('lit-usuarios')">Usuarios</button>
+                <button onclick="renderComponent('lit-orden-compra')">Ordenes de Compra</button> <!-- Nuevo botón -->
+            </div>
+            <button class="logout-button" onclick="logout()">
+                <span class="logout-icon">🔓</span>
+            </button>
+        </div>
+    </header>
+
+    <div class="content" id="content">
+        <!-- Aquí se renderizarán los Lit Elements -->
+    </div>
+
+    <script>
+        // Función para renderizar el componente correspondiente
+        function renderComponent(component) {
+            const content = document.getElementById('content');
+            content.innerHTML = ''; // Limpiar el contenido actual
+
+            // Crear una nueva etiqueta con el nombre del componente
+            const element = document.createElement(component);
+            content.appendChild(element);
+        }
+
+        // Función de logout
+        async function logout() {
+            try {
+                const response = await fetch('/logout', { method: 'GET' });
+
+                if (response.ok) {
+                    // Redirige a la página de login
+                    window.location.href = '/index';
+                } else {
+                    console.error('Error al hacer logout:', response.statusText);
+                }
+            } catch (error) {
+                console.error('Error en la solicitud de logout:', error);
+            }
+        }
+    </script>
+</body>
+
+</html>

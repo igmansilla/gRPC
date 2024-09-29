@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+import "empty.proto";
+
+message Tienda {
+    string codigo = 1;            // Código alfanumérico único
+    string direccion = 2;         // Dirección de la tienda
+    string ciudad = 3;            // Ciudad donde se encuentra la tienda
+    string provincia = 4;         // Provincia donde se encuentra la tienda
+    bool habilitada = 5;          // Estado de la tienda (habilitada/deshabilitada)
+    
+   // Lista de IDs de productos asociados a la tienda
+   repeated int64 producto_ids = 6;
+}
+
+message TiendaList {
+    repeated Tienda tiendas = 1;
+}
+
+// Servicios para Tienda
+service TiendaService {
+    rpc CreateTienda(Tienda) returns (Tienda);
+    rpc GetTienda(Tienda) returns (Tienda);
+    rpc UpdateTienda(Tienda) returns (Tienda);
+    rpc DeleteTienda(Tienda) returns (Tienda);
+    rpc ListTiendas(Empty) returns (TiendaList);
+}
