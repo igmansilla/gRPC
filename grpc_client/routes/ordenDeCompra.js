@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { run: kafkaProducerRun } = require('../kafka/kafka-producer');
+const { ordenes } = require('../kafka/kafka-consumer'); // Importar la lista de órdenes
 
 // Definir la ruta para manejar las órdenes de compra
 router.post('/orden-de-compra', async (req, res) => {
@@ -10,11 +11,19 @@ router.post('/orden-de-compra', async (req, res) => {
     // Enviar la orden de compra a Kafka usando el productor
     await kafkaProducerRun(ordenDeCompra);
     
-    res.status(200).send('Orden de compra enviada a Kafka correctamente');
+    // Respuesta JSON de éxito
+    res.status(200).json({ ok: true, message: 'Orden de compra enviada a Kafka correctamente' });
   } catch (error) {
     console.error('Error enviando la orden a Kafka:', error);
-    res.status(500).send('Error al enviar la orden de compra');
+
+    // Respuesta JSON de error
+    res.status(500).json({ ok: false, message: 'Error al enviar la orden de compra' });
   }
+});
+
+// Ruta para obtener las órdenes de compra recibidas
+router.get('/ordenes-de-compra', (req, res) => {
+  res.status(200).json(ordenes);
 });
 
 module.exports = router;

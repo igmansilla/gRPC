@@ -54,6 +54,13 @@ class LitOrdenCompra extends LitElement {
       border-radius: 5px;
       background-color: #f9f9f9;
     }
+    .item-list {
+      margin-top: 10px;
+      border: 1px solid #eee;
+      padding: 10px;
+      border-radius: 5px;
+      background-color: #fafafa;
+    }
   `;
 
   static properties = {
@@ -97,6 +104,30 @@ class LitOrdenCompra extends LitElement {
     this.color = "Rojo"; // Cambiado al color del Producto A
     this.talle = "M"; // Cambiado al talle del Producto A
     this.cantidad = 1; // Valor por defecto
+
+    // Cargar las órdenes de compra al iniciar el componente
+  }
+
+  connectedCallback() {
+    super.connectedCallback();
+    this.fetchOrdenes();
+  }
+
+  async fetchOrdenes() {
+    try {
+      const response = await fetch("/ordenes-de-compra");
+      if (response.ok) {
+        this.ordenes = await response.json(); // Actualiza la lista de órdenes
+        debugger
+      } else {
+        console.error(
+          "Error al obtener las órdenes de compra:",
+          response.status
+        );
+      }
+    } catch (error) {
+      console.error("Error al realizar la solicitud:", error);
+    }
   }
 
   toggleFormulario() {
@@ -127,7 +158,7 @@ class LitOrdenCompra extends LitElement {
     }
   }
 
-  handleSubmit(e) {
+  async handleSubmit(e) {
     e.preventDefault();
 
     const orden = {
@@ -138,23 +169,30 @@ class LitOrdenCompra extends LitElement {
     };
 
     // Enviar la orden al backend
-    fetch("/orden-de-compra", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(orden),
-    })
-      .then((response) => response.json())
-      .then((data) => {
-        console.log("Orden enviada:", data);
+    try {
+      const response = await fetch("/orden-de-compra", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(orden),
+      });
+
+      if (response.ok) {
+        const data = await response.json(); // Extraer la respuesta JSON del servidor
+        console.log("Orden enviada:", data.message); // Imprimir el mensaje desde el servidor
         alert("Orden de compra enviada correctamente.");
         this.items = []; // Limpia los ítems después de enviar la orden
         this.toggleFormulario(); // Ocultar el formulario
-      })
-      .catch((error) => {
-        console.error("Error al enviar la orden:", error);
-      });
+        await this.fetchOrdenes(); // Actualiza la lista de órdenes
+      } else {
+        const errorData = await response.json(); // Extraer los detalles del error
+        console.error("Error al enviar la orden:", errorData.message); // Imprimir el mensaje de error desde el servidor
+        alert("Error al enviar la orden: " + errorData.message);
+      }
+    } catch (error) {
+      console.error("Error al enviar la orden:", error);
+    }
   }
 
   render() {
@@ -165,7 +203,26 @@ class LitOrdenCompra extends LitElement {
           ${this.ordenes.map(
             (orden) => html`
               <li>
-                ${orden.tienda_id} - ${orden.estado} - ${orden.observaciones}
+                <strong>Orden de compra recibida:</strong> <br />
+                <strong>Orden ID:</strong> ${orden.orden_id} <br />
+                <strong>ID de la tienda:</strong> ${orden.tienda_id} <br />
+                <strong>Estado:</strong> ${orden.estado} <br />
+                <strong>Observaciones:</strong> ${orden.observaciones ||
+                "(sin observaciones)"} <br />
+                <strong>Ítems:</strong>
+                <ul>
+                  ${orden.items.map(
+                    (item) => html`
+                      <li>
+                        <strong>Producto:</strong> ${item.producto} <br />
+                        <strong>Producto ID:</strong> ${item.producto_id} <br />
+                        <strong>Color:</strong> ${item.color} <br />
+                        <strong>Talle:</strong> ${item.talle} <br />
+                        <strong>Cantidad:</strong> ${item.cantidad}
+                      </li>
+                    `
+                  )}
+                </ul>
               </li>
             `
           )}
@@ -263,34 +320,26 @@ class LitOrdenCompra extends LitElement {
                   <option value="3" ?selected="${this.cantidad === 3}">
                     3
                   </option>
-                  <option value="4" ?selected="${this.cantidad === 4}">
-                    4
-                  </option>
-                  <option value="5" ?selected="${this.cantidad === 5}">
-                    5
-                  </option>
                 </select>
-
                 <button type="button" @click="${this.agregarItem}">
-                  Agregar Item
+                  Agregar Ítem
                 </button>
+                <div class="item-list">
+                  <h4>Ítems Agregados:</h4>
+                  <ul>
+                    ${this.items.map(
+                      (item) => html`
+                        <li>
+                          ${item.producto} - Color: ${item.color}, Talle:
+                          ${item.talle}, Cantidad: ${item.cantidad}
+                        </li>
+                      `
+                    )}
+                  </ul>
+                </div>
               </div>
 
-              <div>
-                <h3>Items agregados:</h3>
-                <ul>
-                  ${this.items.map(
-                    (item) => html`
-                      <li>
-                        ${item.producto} - ${item.color} - ${item.talle} -
-                        ${item.cantidad} unidades
-                      </li>
-                    `
-                  )}
-                </ul>
-              </div>
-
-              <button type="submit">Crear Orden de Compra</button>
+              <button type="submit">Enviar Orden de Compra</button>
             </form>
           `
         : ""}

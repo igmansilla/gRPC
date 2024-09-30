@@ -5,6 +5,7 @@ const usuariosRoutes = require('./routes/usuarios');
 const productoRoutes = require('./routes/productos');
 const tiendaRoutes = require('./routes/tiendas');
 const ordenDeCompraRoutes = require('./routes/ordenDeCompra'); // Importar la nueva ruta
+const { run: runKafkaConsumer } = require('./kafka/kafka-consumer'); // Importar el consumidor Kafka
 
 const app = express();
 const port = 3000;
@@ -46,6 +47,8 @@ app.use('/', ordenDeCompraRoutes); // Usar la nueva ruta
 // Iniciar el servidor
 app.listen(port, () => {
   console.log(`Server running at http://localhost:${port}`);
+  // Iniciar el consumidor Kafka
+  runKafkaConsumer().catch(console.error); // Manejar posibles errores
 });
 
 module.exports = app;

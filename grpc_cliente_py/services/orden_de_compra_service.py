@@ -1,10 +1,14 @@
+# services/orden_de_compra_service.py
+from kafka_producer import KafkaProducer  # Importa el productor de Kafka
+
 class OrdenDeCompraService:
     def __init__(self, db):
         self.db = db
+        self.kafka_producer = KafkaProducer()  # Instancia del productor de Kafka
 
     def crear_orden_compra(self, tienda_id, estado, observaciones, items):
         """
-        Crea una nueva orden de compra y sus ítems asociados.
+        Crea una nueva orden de compra y sus ítems asociados, y envía un mensaje a Kafka.
         """
         cursor = self.db.get_cursor()
 
@@ -30,6 +34,17 @@ class OrdenDeCompraService:
 
         self.db.commit()
         print(f"Orden de compra creada con ID: {orden_compra_id}")
+
+        # Enviar el mensaje a Kafka
+        mensaje_kafka = {
+            'orden_id': orden_compra_id,
+            'tienda_id': tienda_id,
+            'estado': estado,
+            'observaciones': observaciones,
+            'items': items
+        }
+        self.kafka_producer.send_message('ordenes-de-compra', mensaje_kafka)  # Enviar al tema 'ordenes_compra'
+
         return orden_compra_id
 
     def obtener_ordenes_compra(self):
