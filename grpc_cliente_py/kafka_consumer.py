@@ -72,6 +72,6 @@ class KafkaConsumer:
 
 
 if __name__ == '__main__':
-    topic = 'example-topic'  # Cambia esto al nombre de tu topic
+    topic = 'orden-de-compra'  # Cambia esto al nombre de tu topic
     kafka_consumer = KafkaConsumer(topic)
     kafka_consumer.start_consuming()

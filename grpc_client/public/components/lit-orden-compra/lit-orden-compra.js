@@ -115,7 +115,7 @@ class LitOrdenCompra extends LitElement {
 
   async fetchOrdenes() {
     try {
-      const response = await fetch("/ordenes-de-compra");
+      const response = await fetch("/solicitudes");
       if (response.ok) {
         this.ordenes = await response.json(); // Actualiza la lista de órdenes
         debugger

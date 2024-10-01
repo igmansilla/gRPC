@@ -17,7 +17,7 @@ const run = async () => {
   // Conectar el consumer
   await consumer.connect();
   // Suscribirse al topic
-  await consumer.subscribe({ topic: 'ordenes-de-compra', fromBeginning: true });
+  await consumer.subscribe({ topic: 'solicitudes', fromBeginning: true });
 
   // Manejar los mensajes recibidos
   await consumer.run({

@@ -12,6 +12,7 @@ from services.producto_service import ProductoService
 from services.producto_tienda_service import ProductoTiendaService
 from services.tienda_service import TiendaService
 from kafka_consumer import KafkaConsumer  # Importa el consumidor de Kafka
+from endpoints import create_orden_de_compra_blueprint  # Importa la función que crea el blueprint
 
 # Inicializa la base de datos en memoria
 db = InMemoryDatabase()
@@ -34,7 +35,7 @@ def serve_grpc():
     print("Servidor gRPC corriendo en el puerto 50051...")
 
     # Inicia el consumidor de Kafka en un hilo separado, pasando la base de datos al consumidor
-    kafka_consumer = KafkaConsumer('example-topic', db)  # Pasa la base de datos
+    kafka_consumer = KafkaConsumer('orden-de-compra', db)  # Pasa la base de datos
     kafka_thread = threading.Thread(target=kafka_consumer.start_consuming)
     kafka_thread.start()
 
@@ -43,6 +44,11 @@ def serve_grpc():
 
 # Inicializa la aplicación Flask para la interfaz básica
 app = Flask(__name__)
+
+# Registra el blueprint de las órdenes de compra con la base de datos
+orden_de_compra_blueprint = create_orden_de_compra_blueprint(db)  # Pasar la base de datos aquí
+app.register_blueprint(orden_de_compra_blueprint)
+
 
 # Ruta para verificar el estado del servidor
 @app.route('/status', methods=['GET'])
@@ -53,7 +59,6 @@ def status():
 @app.route('/', methods=['GET'])
 def index():
     return render_template('index.html')  # Sirve el archivo index.html
-
 
 # Función principal para ejecutar ambos servidores (gRPC y Flask)
 def serve():

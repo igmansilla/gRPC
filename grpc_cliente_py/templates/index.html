@@ -1,37 +1,132 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Página de Bienvenida</title>
+    <title>Gestión de Órdenes de Compra</title>
     <style>
         body {
             font-family: Arial, sans-serif;
             text-align: center;
             padding: 50px;
         }
+
         h1 {
             color: #4CAF50;
         }
+
         p {
             font-size: 18px;
         }
-        a {
-            text-decoration: none;
-            color: white;
-            background-color: #4CAF50;
-            padding: 10px 20px;
-            border-radius: 5px;
-            font-size: 18px;
+
+        table {
+            width: 50%;
+            margin: 20px auto;
+            border-collapse: collapse;
         }
-        a:hover {
+
+        table,
+        th,
+        td {
+            border: 1px solid black;
+        }
+
+        th,
+        td {
+            padding: 10px;
+            text-align: left;
+        }
+
+        select {
+            padding: 5px;
+        }
+
+        button {
+            padding: 5px 10px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+        button:hover {
             background-color: #45a049;
         }
     </style>
 </head>
+
 <body>
-    <h1>Bienvenido a la Gestión de Órdenes de Compra</h1>
-    <p>Esta es la página de inicio para gestionar órdenes de compra.</p>
-    <a href="/status">Ver Estado del Servidor</a>
+    <h1>Gestión de Órdenes de Compra</h1>
+    <p>A continuación puedes ver y modificar el estado de las órdenes de compra.</p>
+
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Producto</th>
+                <th>Estado</th>
+                <th>Acción</th>
+            </tr>
+        </thead>
+        <tbody id="ordenes-table-body">
+            <!-- Aquí se llenarán las órdenes dinámicamente -->
+        </tbody>
+    </table>
+
+    <script>
+        // Función para obtener las órdenes y llenar la tabla
+        async function fetchOrdenes() {
+            const response = await fetch('/ordenes_compra'); // URL del endpoint
+            const ordenes = await response.json();
+
+            const tableBody = document.getElementById('ordenes-table-body');
+            tableBody.innerHTML = ''; // Limpiar tabla
+
+            ordenes.forEach(orden => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${orden.id}</td>
+                    <td>${orden.producto}</td>
+                    <td>
+                        <select id="estado-${orden.id}">
+                            <option value="Rechazada" ${orden.estado === 'Rechazada' ? 'selected' : ''}>Rechazada</option>
+                            <option value="Aceptada" ${orden.estado === 'Aceptada' ? 'selected' : ''}>Aceptada</option>
+                            <option value="Pausada" ${orden.estado === 'Pausada' ? 'selected' : ''}>Pausada</option>
+                        </select>
+                    </td>
+                    <td><button onclick="modificarEstado(${orden.id})">Actualizar</button></td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+
+        // Función para modificar el estado de una orden
+        async function modificarEstado(ordenId) {
+            const nuevoEstado = document.getElementById(`estado-${ordenId}`).value;
+
+            const response = await fetch('/ordenes_compra/modificar', { // URL del endpoint para modificar
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    orden_id: ordenId,
+                    nuevo_estado: nuevoEstado
+                })
+            });
+
+            if (response.ok) {
+                alert(`Estado de la orden ${ordenId} actualizado a ${nuevoEstado}`);
+                await fetchOrdenes(); // Refrescar las órdenes
+            } else {
+                alert('Error al actualizar el estado de la orden');
+            }
+        }
+
+        // Llamar a fetchOrdenes cuando se cargue la página
+        window.onload = fetchOrdenes;
+    </script>
 </body>
+
 </html>

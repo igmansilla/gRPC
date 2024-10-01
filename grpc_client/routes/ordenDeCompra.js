@@ -22,7 +22,7 @@ router.post('/orden-de-compra', async (req, res) => {
 });
 
 // Ruta para obtener las órdenes de compra recibidas
-router.get('/ordenes-de-compra', (req, res) => {
+router.get('/solicitudes', (req, res) => {
   res.status(200).json(ordenes);
 });
 

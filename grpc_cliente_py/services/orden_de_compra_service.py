@@ -6,7 +6,7 @@ class OrdenDeCompraService:
         self.db = db
         self.kafka_producer = KafkaProducer()  # Instancia del productor de Kafka
 
-    def crear_orden_compra(self, tienda_id, estado, observaciones, items):
+    def crear_orden_compra(self, tienda_id, estado, observaciones, items): 
         """
         Crea una nueva orden de compra y sus ítems asociados, y envía un mensaje a Kafka.
         """
@@ -32,8 +32,8 @@ class OrdenDeCompraService:
                 (orden_compra_id, item['producto_id'], item['color'], item['talle'], item['cantidad'])
             )
 
+        # Realizar el commit de la transacción
         self.db.commit()
-        print(f"Orden de compra creada con ID: {orden_compra_id}")
 
         # Enviar el mensaje a Kafka
         mensaje_kafka = {
@@ -43,7 +43,7 @@ class OrdenDeCompraService:
             'observaciones': observaciones,
             'items': items
         }
-        self.kafka_producer.send_message('ordenes-de-compra', mensaje_kafka)  # Enviar al tema 'ordenes_compra'
+        self.kafka_producer.send_message('solicitudes', mensaje_kafka)  # Enviar al tema 'solicitudes'
 
         return orden_compra_id
 
@@ -53,7 +53,14 @@ class OrdenDeCompraService:
         """
         cursor = self.db.get_cursor()
         cursor.execute('SELECT * FROM ordenes_compra')
-        return cursor.fetchall()
+        rows = cursor.fetchall()
+        print("Registros de órdenes de compra:", rows)  # Imprime los registros recuperados
+        if not rows:
+            print("No se encontraron órdenes de compra.")
+
+        # Convierte a un diccionario si es necesario
+        columnas = [column[0] for column in cursor.description]
+        return [dict(zip(columnas, row)) for row in rows]
 
     def obtener_items_por_orden(self, orden_compra_id):
         """
@@ -62,3 +69,17 @@ class OrdenDeCompraService:
         cursor = self.db.get_cursor()
         cursor.execute('SELECT * FROM items_orden_compra WHERE orden_compra_id = ?', (orden_compra_id,))
         return cursor.fetchall()
+
+    def obtener_articulo_por_id(self, articulo_id):
+        """
+        Retorna un artículo por su ID.
+        """
+        cursor = self.db.get_cursor()
+        cursor.execute('SELECT * FROM productos WHERE id = ?', (articulo_id,))
+        articulo = cursor.fetchone()
+        
+        # Convertir a un diccionario si el artículo existe
+        if articulo:
+            columnas = [column[0] for column in cursor.description]
+            return dict(zip(columnas, articulo))
+        return None  # Retorna None si el artículo no existe
