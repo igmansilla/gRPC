@@ -1,5 +1,6 @@
 # services/orden_de_compra_service.py
 from kafka_producer import KafkaProducer  # Importa el productor de Kafka
+from datetime import datetime, timedelta
 
 class OrdenDeCompraService:
     def __init__(self, db):
@@ -9,10 +10,85 @@ class OrdenDeCompraService:
     def crear_orden_compra(self, tienda_id, estado, observaciones, items): 
         """
         Crea una nueva orden de compra y sus ítems asociados, y envía un mensaje a Kafka.
+        Actualiza el stock de productos si la orden es aceptada.
+        En caso de que no haya stock suficiente, la orden queda ACEPTADA, 
+        pero se informa sobre los artículos faltantes.
         """
         cursor = self.db.get_cursor()
-
+        
+        # Validar ítems
+        errores, faltantes_stock = self.validar_items(cursor, items)
+        
+        # Cambiar el estado y generar observaciones
+        estado, observaciones = self.generar_estado_observaciones(errores, faltantes_stock)
+        
         # Insertar la orden de compra
+        orden_compra_id = self.insertar_orden_compra(cursor, tienda_id, estado, observaciones)
+        
+        # Insertar los ítems de la orden de compra
+        self.insertar_items_orden_compra(cursor, orden_compra_id, items)
+        
+        # Actualizar stock solo si no hay artículos faltantes
+        if not faltantes_stock:
+            self.actualizar_stock(cursor, items)
+
+        # Realizar el commit de la transacción
+        self.db.commit()
+
+        # Generar y enviar la orden de despacho
+        orden_despacho_id = self.generar_orden_despacho(cursor, tienda_id, orden_compra_id)
+        self.enviar_mensaje_despacho(tienda_id, orden_despacho_id, orden_compra_id)
+
+        # Enviar el mensaje a Kafka para la orden de compra
+        self.enviar_mensaje_kafka(tienda_id, orden_compra_id, estado, observaciones, items)
+
+        return orden_compra_id
+
+
+
+    def validar_items(self, cursor, items):
+        """Valida los ítems y devuelve errores y artículos faltantes de stock."""
+        errores = []
+        faltantes_stock = []  # Lista para los artículos faltantes de stock
+        
+        for item in items:
+            if item['cantidad'] < 1:
+                errores.append(f"Artículo {item['producto_id']}: cantidad mal informada.")
+            
+            # Validar existencia del producto
+            cursor.execute("SELECT cantidad_stock_proveedor FROM productos WHERE codigo = ?", (item['producto_id'],))
+            stock = cursor.fetchone()
+            if not stock:
+                errores.append(f"Artículo {item['producto_id']}: no existe en el inventario.")
+            else:
+                if item['cantidad'] > stock[0]:
+                    faltantes_stock.append({
+                        'producto_id': item['producto_id'],
+                        'cantidad_solicitada': item['cantidad'],
+                        'cantidad_disponible': stock[0]
+                    })
+        
+        return errores, faltantes_stock
+
+
+    def generar_estado_observaciones(self, errores, faltantes_stock):
+        """Genera el estado y las observaciones de la orden."""
+        estado = 'ACEPTADA'
+        if errores:
+            observaciones = '; '.join(errores)
+        elif faltantes_stock:
+            observaciones = "Artículos faltantes: " + '; '.join([
+                f"{falta['producto_id']}: solicitado {falta['cantidad_solicitada']}, disponible {falta['cantidad_disponible']}"
+                for falta in faltantes_stock
+            ])
+        else:
+            observaciones = ""
+
+        return estado, observaciones
+
+
+    def insertar_orden_compra(self, cursor, tienda_id, estado, observaciones):
+        """Inserta la orden de compra en la base de datos y devuelve su ID."""
         cursor.execute(
             '''
             INSERT INTO ordenes_compra (tienda_id, fecha_solicitud, estado, observaciones)
@@ -20,9 +96,11 @@ class OrdenDeCompraService:
             ''', 
             (tienda_id, estado, observaciones)
         )
-        orden_compra_id = cursor.lastrowid
+        return cursor.lastrowid
 
-        # Insertar los ítems de la orden de compra
+
+    def insertar_items_orden_compra(self, cursor, orden_compra_id, items):
+        """Inserta los ítems de la orden de compra en la base de datos."""
         for item in items:
             cursor.execute(
                 '''
@@ -32,10 +110,22 @@ class OrdenDeCompraService:
                 (orden_compra_id, item['producto_id'], item['color'], item['talle'], item['cantidad'])
             )
 
-        # Realizar el commit de la transacción
-        self.db.commit()
 
-        # Enviar el mensaje a Kafka
+    def actualizar_stock(self, cursor, items):
+        """Actualiza el stock de productos en la base de datos."""
+        for item in items:
+            cursor.execute(
+                '''
+                UPDATE productos 
+                SET cantidad_stock_proveedor = cantidad_stock_proveedor - ? 
+                WHERE codigo = ?
+                ''',
+                (item['cantidad'], item['producto_id'])
+            )
+
+
+    def enviar_mensaje_kafka(self, tienda_id, orden_compra_id, estado, observaciones, items):
+        """Envía un mensaje a Kafka con la información de la orden de compra."""
         mensaje_kafka = {
             'orden_id': orden_compra_id,
             'tienda_id': tienda_id,
@@ -43,9 +133,8 @@ class OrdenDeCompraService:
             'observaciones': observaciones,
             'items': items
         }
-        self.kafka_producer.send_message('solicitudes', mensaje_kafka)  # Enviar al tema 'solicitudes'
+        self.kafka_producer.send_message(f"solicitudes", mensaje_kafka)  # Enviar al tema de solicitudes
 
-        return orden_compra_id
 
     def obtener_ordenes_compra(self):
         """
@@ -83,3 +172,68 @@ class OrdenDeCompraService:
             columnas = [column[0] for column in cursor.description]
             return dict(zip(columnas, articulo))
         return None  # Retorna None si el artículo no existe
+    def generar_orden_despacho(self, cursor, tienda_id, orden_compra_id):
+        """Genera una nueva orden de despacho y devuelve su ID."""
+        cursor.execute(
+            '''
+            INSERT INTO ordenes_despacho (orden_compra_id, fecha_estimacion_envio, estado)
+            VALUES (?, datetime('now', '+7 days'), 'PENDIENTE')  -- Estado inicial 'PENDIENTE'
+            ''',
+            (orden_compra_id,)
+        )
+        return cursor.lastrowid
+
+    def enviar_mensaje_despacho(self, tienda_id, orden_despacho_id, orden_compra_id):
+        """Envía un mensaje al topic de despacho con la información relevante."""
+        fecha_estimacion_envio = datetime.now() + timedelta(days=7)
+        
+        mensaje_despacho = {
+            'orden_despacho_id': orden_despacho_id,
+            'orden_compra_id': orden_compra_id,
+            'fecha_estimacion_envio': fecha_estimacion_envio.isoformat()  # Convertir a string
+        }
+        
+        self.kafka_producer.send_message(f"despacho", mensaje_despacho)  # Enviar al tema de despacho
+    def marcar_orden_recibida(self, orden_id, despacho_id):
+        """
+        Marca una orden como recibida en la base de datos.
+        """
+        cursor = self.db.get_cursor()
+        
+        # Verificar que la orden está en estado ACEPTADA y tiene un despacho asociado
+        cursor.execute("SELECT estado FROM ordenes_compra WHERE id = ?", (orden_id,))
+        estado = cursor.fetchone()
+        
+        if not estado or estado[0] != 'ACEPTADA':
+            print(f"Orden {orden_id} no puede ser marcada como recibida porque no está en estado ACEPTADA.")
+            return False
+        
+        # Actualizar la fecha de recepción en la base de datos
+        cursor.execute(
+            '''
+            UPDATE ordenes_compra 
+            SET fecha_recepcion = datetime('now') 
+            WHERE id = ?
+            ''',
+            (orden_id,)
+        )
+
+        # Aquí puedes enviar el mensaje al topic "/recepcion"
+        self.enviar_mensaje_recepcion(despacho_id, orden_id)
+
+        # Realizar el commit de la transacción
+        self.db.commit()
+
+        print(f"Orden {orden_id} marcada como recibida con despacho {despacho_id}.")
+
+        return True
+    
+    def enviar_mensaje_recepcion(self, despacho_id, orden_id):
+        """Envía un mensaje al topic '/recepcion' con la información de la recepción."""
+        mensaje_recepcion = {
+            'orden_id': orden_id,
+            'despacho_id': despacho_id,
+            'fecha_recepcion': datetime.now().isoformat()  # Convertir a string
+        }
+        
+        self.kafka_producer.send_message("recepcion", mensaje_recepcion)  # Enviar al tema de recepción

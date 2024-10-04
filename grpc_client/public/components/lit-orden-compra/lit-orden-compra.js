@@ -61,10 +61,34 @@ class LitOrdenCompra extends LitElement {
       border-radius: 5px;
       background-color: #fafafa;
     }
+
+    /* Estilos para la tabla de órdenes */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 20px 0;
+    }
+
+    th,
+    td {
+      padding: 10px;
+      border: 1px solid #ddd;
+      text-align: left;
+    }
+
+    th {
+      background-color: #007bff;
+      color: white;
+    }
+
+    tbody tr:nth-child(even) {
+      background-color: #f2f2f2;
+    }
   `;
 
   static properties = {
     ordenes: { type: Array },
+    despachos: { type: Array },
     mostrarFormulario: { type: Boolean },
     tienda_id: { type: String },
     estado: { type: String },
@@ -79,6 +103,7 @@ class LitOrdenCompra extends LitElement {
   constructor() {
     super();
     this.ordenes = []; // Lista de órdenes de compra
+    this.despachos = []; // Lista de despachos
     this.mostrarFormulario = false; // Controlar la visibilidad del formulario
     this.tienda_id = "T001";
     this.estado = "SOLICITADA"; // Estado por defecto
@@ -118,7 +143,7 @@ class LitOrdenCompra extends LitElement {
       const response = await fetch("/solicitudes");
       if (response.ok) {
         this.ordenes = await response.json(); // Actualiza la lista de órdenes
-        debugger
+        await this.fetchDespachos(); // Cargar despachos después de obtener órdenes
       } else {
         console.error(
           "Error al obtener las órdenes de compra:",
@@ -195,38 +220,104 @@ class LitOrdenCompra extends LitElement {
     }
   }
 
+  async fetchDespachos() {
+    try {
+      const response = await fetch("/despachos"); // Supongamos que hay un endpoint para obtener los despachos
+      if (response.ok) {
+        this.despachos = await response.json(); // Actualiza la lista de despachos
+      } else {
+        console.error("Error al obtener los despachos:", response.status);
+      }
+    } catch (error) {
+      console.error("Error al realizar la solicitud:", error);
+    }
+  }
+
+  async ordenRecibida(ordenId, despachoId) {
+    try {
+      const response = await fetch(`/orden-recibida`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ orden_id: ordenId, despacho_id: despachoId }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log("Orden recibida:", data.message);
+        alert("Orden marcada como recibida.");
+        await this.fetchOrdenes(); // Actualiza la lista de órdenes
+      } else {
+        const errorData = await response.json();
+        console.error(
+          "Error al marcar la orden como recibida:",
+          errorData.message
+        );
+        alert("Error al marcar la orden como recibida: " + errorData.message);
+      }
+    } catch (error) {
+      console.error("Error al realizar la solicitud:", error);
+    }
+  }
+
   render() {
     return html`
       <div class="orden-list">
         <h2>Órdenes de Compra</h2>
-        <ul>
-          ${this.ordenes.map(
-            (orden) => html`
-              <li>
-                <strong>Orden de compra recibida:</strong> <br />
-                <strong>Orden ID:</strong> ${orden.orden_id} <br />
-                <strong>ID de la tienda:</strong> ${orden.tienda_id} <br />
-                <strong>Estado:</strong> ${orden.estado} <br />
-                <strong>Observaciones:</strong> ${orden.observaciones ||
-                "(sin observaciones)"} <br />
-                <strong>Ítems:</strong>
-                <ul>
-                  ${orden.items.map(
-                    (item) => html`
-                      <li>
-                        <strong>Producto:</strong> ${item.producto} <br />
-                        <strong>Producto ID:</strong> ${item.producto_id} <br />
-                        <strong>Color:</strong> ${item.color} <br />
-                        <strong>Talle:</strong> ${item.talle} <br />
-                        <strong>Cantidad:</strong> ${item.cantidad}
-                      </li>
-                    `
-                  )}
-                </ul>
-              </li>
-            `
-          )}
-        </ul>
+        <table>
+          <thead>
+            <tr>
+              <th>Orden ID</th>
+              <th>ID de la Tienda</th>
+              <th>Estado</th>
+              <th>Observaciones</th>
+              <th>Despacho ID</th>
+              <!-- Nueva columna para el ID de despacho -->
+              <th>Fecha Estimación Envío</th>
+              <!-- Nueva columna para la fecha de estimación -->
+            </tr>
+          </thead>
+          <tbody>
+            ${this.ordenes.map((orden) => {
+              const despacho = this.despachos.find(
+                (d) => d.orden_compra_id === orden.orden_id
+              ); // Encuentra el despacho relacionado
+              return html`
+                <tr>
+                  <td>${orden.orden_id}</td>
+                  <td>${orden.tienda_id}</td>
+                  <td>${orden.estado}</td>
+                  <td>${orden.observaciones || "(sin observaciones)"}</td>
+                  <td>
+                    ${despacho ? despacho.orden_despacho_id : "(sin despacho)"}
+                  </td>
+                  <!-- Muestra ID de despacho -->
+                  <td>
+                    ${despacho
+                      ? despacho.fecha_estimacion_envio
+                      : "(sin fecha)"}
+                  </td>
+                  <!-- Muestra fecha de estimación -->
+                  <td>
+                    ${orden.estado === "ACEPTADA" && despacho
+                      ? html`<button
+                          @click="${() =>
+                            this.ordenRecibida(
+                              orden.orden_id,
+                              despacho.orden_despacho_id
+                            )}"
+                        >
+                          Marcar como Recibida
+                        </button>`
+                      : ""}
+                  </td>
+                </tr>
+              `;
+            })}
+          </tbody>
+        </table>
+
         <button @click="${this.toggleFormulario}">
           Agregar Nueva Orden de Compra
         </button>

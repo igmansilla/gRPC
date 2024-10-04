@@ -1,9 +1,11 @@
 import producto_pb2
 import producto_pb2_grpc
+from kafka_producer import KafkaProducer
 
 class ProductoService(producto_pb2_grpc.ProductoServiceServicer):
     def __init__(self, db):
         self.db = db
+        self.kafka_producer = KafkaProducer()
 
     def CreateProducto(self, request, context):
         cursor = self.db.get_cursor()
@@ -74,3 +76,42 @@ class ProductoService(producto_pb2_grpc.ProductoServiceServicer):
 
         # Devolver la lista de productos en el formato esperado
         return producto_pb2.ProductoList(productos=productos)
+    
+    def crear_producto(self, nombre, codigo, talle, foto, color, cantidad_stock):
+        """
+        Crea un nuevo producto en la base de datos y envía un mensaje a Kafka.
+        """
+        cursor = self.db.get_cursor()
+
+        # Insertar el nuevo producto
+        producto_id = self.insertar_producto(cursor, nombre, codigo, talle, foto, color, cantidad_stock)
+
+        # Enviar el mensaje a Kafka
+        self.enviar_mensaje_kafka(producto_id, codigo, talle, color, foto)
+
+        # Realizar el commit de la transacción
+        self.db.commit()
+
+        return producto_id
+
+    def insertar_producto(self, cursor, nombre, codigo, talle, foto, color, cantidad_stock):
+        """Inserta un nuevo producto en la base de datos y devuelve su ID."""
+        cursor.execute(
+            '''
+            INSERT INTO productos (nombre, codigo, talle, foto, color, cantidad_stock_proveedor)
+            VALUES (?, ?, ?, ?, ?, ?)
+            ''', 
+            (nombre, codigo, talle, foto, color, cantidad_stock)
+        )
+        return cursor.lastrowid
+
+    def enviar_mensaje_kafka(self, producto_id, codigo, talle, color, foto):
+        """Envía un mensaje a Kafka con la información del nuevo producto."""
+        mensaje_kafka = {
+            'producto_id': producto_id,
+            'codigo': codigo,
+            'talle': talle,
+            'color': color,
+            'foto': foto
+        }
+        self.kafka_producer.send_message("/novedades", mensaje_kafka)  # Enviar al tema de novedades

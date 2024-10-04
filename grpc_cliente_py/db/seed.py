@@ -19,12 +19,10 @@ def insert_test_data(conn):
     # Insertar productos
     queries = [
         '''
-        INSERT INTO productos (nombre, codigo, talle, foto, color)
-        VALUES ('Producto A', 'A001', 'M', 'url/to/fotoA', 'Rojo')
-        ''',
-        '''
-        INSERT INTO productos (nombre, codigo, talle, foto, color)
-        VALUES ('Producto B', 'B002', 'L', 'url/to/fotoB', 'Azul')
+       INSERT INTO productos (nombre, codigo, talle, foto, color, cantidad_stock_proveedor)
+       VALUES ('Producto A', 'A001', 'M', 'url/to/fotoA', 'Rojo', 100),  -- Incluyendo la cantidad de stock
+            ('Producto B', 'B002', 'L', 'url/to/fotoB', 'Azul', 150);  -- Incluyendo la cantidad de stock
+
         '''
     ]
     for query in queries:

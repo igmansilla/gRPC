@@ -1,6 +1,7 @@
 # endpoints.py
 from flask import Blueprint, jsonify, request
 from services.orden_de_compra_service import OrdenDeCompraService
+from kafka_producer import KafkaProducer
 
 # Crear una función para configurar el Blueprint con la base de datos pasada como parámetro
 def create_orden_de_compra_blueprint(db):
@@ -89,3 +90,99 @@ def create_orden_de_compra_blueprint(db):
         return jsonify({'mensaje': 'Estado de la orden de compra actualizado con éxito', 'nuevo_estado': nuevo_estado}), 200
 
     return orden_de_compra_blueprint
+
+# Crea el blueprint de productos
+def create_producto_blueprint(db):
+    producto_blueprint = Blueprint('productos', __name__)
+    kafka_producer = KafkaProducer()
+
+    # Ruta para obtener todos los productos
+    @producto_blueprint.route('/productos', methods=['GET'])
+    def obtener_productos():
+        # Obtener todos los productos desde la base de datos
+        productos = db.get_productos()
+
+        # Devuelve los productos en formato JSON
+        return jsonify(productos)
+
+        return producto_blueprint
+    # Ruta para modificar el stock de un producto
+    @producto_blueprint.route('/productos/modificar', methods=['PUT'])
+    async def modificar_stock():
+        data = request.get_json()
+
+        producto_id = data.get('producto_id')
+        nueva_cantidad = data.get('nueva_cantidad')
+
+        if not producto_id or nueva_cantidad is None:
+            return jsonify({'error': 'Faltan datos necesarios'}), 400
+
+        # Llamar a la base de datos para modificar el stock del producto
+        try:
+            cursor = db.get_cursor()
+            cursor.execute("""
+                UPDATE productos
+                SET cantidad_stock_proveedor = ?
+                WHERE id = ?
+            """, (nueva_cantidad, producto_id))
+
+            db.commit()  # Confirmar los cambios
+
+            return jsonify({'message': 'Stock modificado exitosamente'}), 200
+
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500
+
+        return producto_blueprint
+
+    # Ruta para dar de alta un nuevo producto
+    @producto_blueprint.route('/productos/alta', methods=['POST'])
+    def alta_producto():
+        """
+        Endpoint para dar de alta un nuevo producto.
+        """
+        data = request.get_json()
+
+        # Extraer datos del producto del cuerpo de la solicitud
+        codigo = data.get('codigo')
+        nombre = data.get('nombre')
+        talles = data.get('talles')
+        colores = data.get('colores')
+        urls = data.get('urls')
+        cantidad_stock_proveedor = data.get('cantidad_stock_proveedor')
+
+        # Validar que todos los campos necesarios están presentes
+        if not all([codigo, nombre, talles, colores, urls, cantidad_stock_proveedor]):
+            return jsonify({'error': 'Faltan datos necesarios'}), 400
+
+        try:
+            # Llamar a la base de datos para insertar el nuevo producto
+            cursor = db.get_cursor()
+            cursor.execute("""
+                INSERT INTO productos (codigo, nombre, talles, colores, urls, cantidad_stock_proveedor)
+                VALUES (?, ?, ?, ?, ?, ?)
+            """, (codigo, nombre, talles, colores, urls, cantidad_stock_proveedor))
+
+            # Obtener el ID del producto insertado
+            producto_id = cursor.lastrowid
+            
+            # Enviar mensaje a Kafka
+            mensaje_kafka = {
+                'producto_id': producto_id,
+                'codigo': codigo,
+                'nombre': nombre,
+                'talles': talles,
+                'colores': colores,
+                'urls': urls,
+                'cantidad_stock_proveedor': cantidad_stock_proveedor
+            }
+            kafka_producer.send_message("novedades", mensaje_kafka)
+
+            db.commit()  # Confirmar los cambios
+
+            return jsonify({'message': 'Producto creado exitosamente'}), 201
+
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500
+
+    return producto_blueprint

@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestión de Órdenes de Compra</title>
+    <title>Gestión de Productos</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -21,7 +21,7 @@
         }
 
         table {
-            width: 50%;
+            width: 70%;
             margin: 20px auto;
             border-collapse: collapse;
         }
@@ -38,7 +38,9 @@
             text-align: left;
         }
 
-        select {
+        input[type="number"],
+        input[type="text"] {
+            width: 80px;
             padding: 5px;
         }
 
@@ -53,79 +55,159 @@
         button:hover {
             background-color: #45a049;
         }
+
+        form {
+            margin: 20px auto;
+            text-align: left;
+            width: 70%;
+        }
     </style>
 </head>
 
 <body>
-    <h1>Gestión de Órdenes de Compra</h1>
-    <p>A continuación puedes ver y modificar el estado de las órdenes de compra.</p>
+    <h1>Gestión de Productos</h1>
+
+    <h2>Alta de Producto</h2>
+    <form id="alta-producto-form">
+        <table>
+            <tr>
+                <td><label for="codigo">Código:</label></td>
+                <td><input type="text" id="codigo" required></td>
+            </tr>
+            <tr>
+                <td><label for="nombre">Nombre:</label></td>
+                <td><input type="text" id="nombre" required></td>
+            </tr>
+            <tr>
+                <td><label for="talles">Talles (separados por coma):</label></td>
+                <td><input type="text" id="talles" required></td>
+            </tr>
+            <tr>
+                <td><label for="colores">Colores (separados por coma):</label></td>
+                <td><input type="text" id="colores" required></td>
+            </tr>
+            <tr>
+                <td><label for="urls">URLs (separadas por coma):</label></td>
+                <td><input type="text" id="urls" required></td>
+            </tr>
+            <tr>
+                <td><label for="cantidad_stock_proveedor">Cantidad Stock:</label></td>
+                <td><input type="number" id="cantidad_stock_proveedor" required min="0"></td>
+            </tr>
+            <tr>
+                <td colspan="2" style="text-align: center;">
+                    <button type="submit">Dar de alta producto</button>
+                </td>
+            </tr>
+        </table>
+    </form>
 
     <table>
         <thead>
             <tr>
                 <th>ID</th>
-                <th>Producto</th>
-                <th>Estado</th>
+                <th>Nombre</th>
+                <th>Código</th>
+                <th>Cantidad Stock</th>
                 <th>Acción</th>
             </tr>
         </thead>
-        <tbody id="ordenes-table-body">
-            <!-- Aquí se llenarán las órdenes dinámicamente -->
+        <tbody id="productos-table-body">
+            <!-- Aquí se llenarán los productos dinámicamente -->
         </tbody>
     </table>
 
     <script>
-        // Función para obtener las órdenes y llenar la tabla
-        async function fetchOrdenes() {
-            const response = await fetch('/ordenes_compra'); // URL del endpoint
-            const ordenes = await response.json();
+        // Función para obtener los productos y llenar la tabla
+        async function fetchProductos() {
+            const response = await fetch('/productos'); // URL del endpoint
+            const productos = await response.json();
 
-            const tableBody = document.getElementById('ordenes-table-body');
+            const tableBody = document.getElementById('productos-table-body');
             tableBody.innerHTML = ''; // Limpiar tabla
 
-            ordenes.forEach(orden => {
+            productos.forEach(producto => {
                 const row = document.createElement('tr');
                 row.innerHTML = `
-                    <td>${orden.id}</td>
-                    <td>${orden.producto}</td>
+                    <td>${producto.id}</td>
+                    <td>${producto.nombre}</td>
+                    <td>${producto.codigo}</td>
                     <td>
-                        <select id="estado-${orden.id}">
-                            <option value="Rechazada" ${orden.estado === 'Rechazada' ? 'selected' : ''}>Rechazada</option>
-                            <option value="Aceptada" ${orden.estado === 'Aceptada' ? 'selected' : ''}>Aceptada</option>
-                            <option value="Pausada" ${orden.estado === 'Pausada' ? 'selected' : ''}>Pausada</option>
-                        </select>
+                        <input type="number" id="cantidad-${producto.id}" value="${producto.cantidad_stock_proveedor}" min="0">
                     </td>
-                    <td><button onclick="modificarEstado(${orden.id})">Actualizar</button></td>
+                    <td><button onclick="modificarStock(${producto.id})">Actualizar</button></td>
                 `;
                 tableBody.appendChild(row);
             });
         }
 
-        // Función para modificar el estado de una orden
-        async function modificarEstado(ordenId) {
-            const nuevoEstado = document.getElementById(`estado-${ordenId}`).value;
+        // Función para modificar la cantidad de stock de un producto
+        async function modificarStock(productoId) {
+            const nuevaCantidad = document.getElementById(`cantidad-${productoId}`).value;
 
-            const response = await fetch('/ordenes_compra/modificar', { // URL del endpoint para modificar
+            const response = await fetch('/productos/modificar', { // URL del endpoint para modificar
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                    orden_id: ordenId,
-                    nuevo_estado: nuevoEstado
+                    producto_id: productoId,
+                    nueva_cantidad: nuevaCantidad
                 })
             });
 
             if (response.ok) {
-                alert(`Estado de la orden ${ordenId} actualizado a ${nuevoEstado}`);
-                await fetchOrdenes(); // Refrescar las órdenes
+                alert(`Stock del producto ${productoId} actualizado a ${nuevaCantidad}`);
+                await fetchProductos(); // Refrescar los productos
             } else {
-                alert('Error al actualizar el estado de la orden');
+                alert('Error al actualizar el stock del producto');
             }
         }
 
-        // Llamar a fetchOrdenes cuando se cargue la página
-        window.onload = fetchOrdenes;
+        // Función para dar de alta un nuevo producto
+        async function darDeAltaProducto(event) {
+            event.preventDefault(); // Prevenir el envío del formulario
+
+            const codigo = document.getElementById('codigo').value;
+            const nombre = document.getElementById('nombre').value;
+            const talles = document.getElementById('talles').value.split(',');
+            const colores = document.getElementById('colores').value.split(',');
+            const urls = document.getElementById('urls').value.split(',');
+            const cantidad_stock_proveedor = document.getElementById('cantidad_stock_proveedor').value;
+
+            const nuevoProducto = {
+                codigo,
+                nombre,
+                talles,
+                colores,
+                urls,
+                cantidad_stock_proveedor // Añadir cantidad_stock_proveedor al nuevo producto
+            };
+
+            const response = await fetch('/productos/alta', { // URL del endpoint para dar de alta
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(nuevoProducto)
+            });
+
+            if (response.ok) {
+                alert('Producto dado de alta exitosamente');
+                await fetchProductos(); // Refrescar los productos
+            } else {
+                alert('Error al dar de alta el producto');
+            }
+
+            // Limpiar el formulario
+            document.getElementById('alta-producto-form').reset();
+        }
+
+        // Asignar el evento de envío del formulario
+        document.getElementById('alta-producto-form').addEventListener('submit', darDeAltaProducto);
+
+        // Llamar a fetchProductos cuando se cargue la página
+        window.onload = fetchProductos;
     </script>
 </body>
 

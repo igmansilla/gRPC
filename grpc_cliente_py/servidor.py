@@ -12,7 +12,7 @@ from services.producto_service import ProductoService
 from services.producto_tienda_service import ProductoTiendaService
 from services.tienda_service import TiendaService
 from kafka_consumer import KafkaConsumer  # Importa el consumidor de Kafka
-from endpoints import create_orden_de_compra_blueprint  # Importa la función que crea el blueprint
+from endpoints import create_orden_de_compra_blueprint, create_producto_blueprint  # Importa la función que crea el blueprint
 
 # Inicializa la base de datos en memoria
 db = InMemoryDatabase()
@@ -49,6 +49,9 @@ app = Flask(__name__)
 orden_de_compra_blueprint = create_orden_de_compra_blueprint(db)  # Pasar la base de datos aquí
 app.register_blueprint(orden_de_compra_blueprint)
 
+# Registra el blueprint de productos
+producto_blueprint = create_producto_blueprint(db)
+app.register_blueprint(producto_blueprint)
 
 # Ruta para verificar el estado del servidor
 @app.route('/status', methods=['GET'])

@@ -20,7 +20,8 @@ def create_tables(conn):
             codigo TEXT UNIQUE NOT NULL,
             talle TEXT,
             foto TEXT,
-            color TEXT
+            color TEXT,
+            cantidad_stock_proveedor INTEGER DEFAULT 0  -- Nuevo campo para stock en proveedor
         )
         ''',
         '''
@@ -67,6 +68,15 @@ def create_tables(conn):
             FOREIGN KEY (orden_compra_id) REFERENCES ordenes_compra(id),
             FOREIGN KEY (producto_id) REFERENCES productos(id)
         );
+        ''', 
+        '''
+        CREATE TABLE IF NOT EXISTS ordenes_despacho (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            orden_compra_id INTEGER,
+            fecha_estimacion_envio TEXT,  -- Fecha estimada de envío
+            estado TEXT CHECK (estado IN ('PENDIENTE', 'ENVIADO', 'RECIBIDO')) NOT NULL,
+            FOREIGN KEY (orden_compra_id) REFERENCES ordenes_compra(id)
+        )
         '''
     ]
     

@@ -46,24 +46,32 @@ class KafkaConsumer:
 
     def process_message(self, message):
         """
-        Procesa los mensajes recibidos de Kafka y crea una orden de compra.
+        Procesa los mensajes recibidos de Kafka.
         """
         try:
-            # Extracción de campos del mensaje Kafka (asegúrate de que el formato del mensaje sea correcto)
-            tienda_id = message['tienda_id']
-            estado = message['estado']
-            observaciones = message.get('observaciones', None)
-            items = message['items']
+            # Determina si el mensaje es de orden de compra o de recepción
+            if 'tienda_id' in message:  # Mensaje de orden de compra
+                tienda_id = message['tienda_id']
+                estado = message['estado']
+                observaciones = message.get('observaciones', None)
+                items = message['items']
 
-            # Llama al servicio de orden de compra para crear la orden y guardar los ítems
-            orden_id = self.orden_compra_service.crear_orden_compra(
-                tienda_id=tienda_id,
-                estado=estado,
-                observaciones=observaciones,
-                items=items
-            )
+                # Llama al servicio de orden de compra para crear la orden y guardar los ítems
+                orden_id = self.orden_compra_service.crear_orden_compra(
+                    tienda_id=tienda_id,
+                    estado=estado,
+                    observaciones=observaciones,
+                    items=items
+                )
 
-            print(f"Orden de compra creada con ID: {orden_id}")
+                print(f"Orden de compra creada con ID: {orden_id}")
+
+            elif 'orden_id' in message and 'despacho_id' in message:  # Mensaje de recepción
+                orden_id = message['orden_id']
+                despacho_id = message['despacho_id']
+
+                # Marca la orden como recibida
+                self.orden_compra_service.marcar_orden_recibida(orden_id, despacho_id)
 
         except KeyError as e:
             print(f"Error: Campo faltante en el mensaje: {e}")
