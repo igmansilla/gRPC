@@ -1,4 +1,3 @@
-// Importa lit como módulos CommonJS
 import { LitElement, html, css } from "https://cdn.skypack.dev/lit";
 
 class ProductosComponent extends LitElement {

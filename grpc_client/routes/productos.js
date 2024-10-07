@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const { productoClient } = require("../grpcClient");
+const { novedades } = require("../kafka/kafka-consumer");
 
 // Ruta para manejar la creación de productos
 router.post("/createProducto", express.json(), (req, res) => {
@@ -44,6 +45,11 @@ router.get("/getProducto/:codigo", (req, res) => {
     }
   });
 });
+
+router.get("/novedades", (req, res) => {
+  res.status(200).json(novedades);
+});
+
 
 // Ruta para actualizar un producto
 router.put("/updateProducto/:id", express.json(), (req, res) => {

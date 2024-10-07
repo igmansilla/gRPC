@@ -200,14 +200,20 @@ class OrdenDeCompraService:
         """
         cursor = self.db.get_cursor()
         
-        # Verificar que la orden está en estado ACEPTADA y tiene un despacho asociado
+       # Verificar que la orden está en estado ACEPTADA y tiene un despacho asociado
         cursor.execute("SELECT estado FROM ordenes_compra WHERE id = ?", (orden_id,))
-        estado = cursor.fetchone()
-        
-        if not estado or estado[0] != 'ACEPTADA':
-            print(f"Orden {orden_id} no puede ser marcada como recibida porque no está en estado ACEPTADA.")
+        resultado = cursor.fetchone()
+
+        if resultado is None:
+            print(f"Orden {orden_id} no existe en la base de datos.")
             return False
-        
+
+        estado = resultado[0]  # Asegúrate de que estás accediendo al índice correcto de la tupla
+
+        if estado != 'ACEPTADA':
+            print(f"Orden {orden_id} no puede ser marcada como recibida porque no está en estado ACEPTADA. Está en {estado}")
+            return False
+
         # Actualizar la fecha de recepción en la base de datos
         cursor.execute(
             '''
@@ -218,22 +224,9 @@ class OrdenDeCompraService:
             (orden_id,)
         )
 
-        # Aquí puedes enviar el mensaje al topic "/recepcion"
-        self.enviar_mensaje_recepcion(despacho_id, orden_id)
-
         # Realizar el commit de la transacción
         self.db.commit()
 
         print(f"Orden {orden_id} marcada como recibida con despacho {despacho_id}.")
 
         return True
-    
-    def enviar_mensaje_recepcion(self, despacho_id, orden_id):
-        """Envía un mensaje al topic '/recepcion' con la información de la recepción."""
-        mensaje_recepcion = {
-            'orden_id': orden_id,
-            'despacho_id': despacho_id,
-            'fecha_recepcion': datetime.now().isoformat()  # Convertir a string
-        }
-        
-        self.kafka_producer.send_message("recepcion", mensaje_recepcion)  # Enviar al tema de recepción

@@ -39,6 +39,11 @@ def serve_grpc():
     kafka_thread = threading.Thread(target=kafka_consumer.start_consuming)
     kafka_thread.start()
 
+    # Inicia el consumidor de Kafka en un hilo separado, pasando la base de datos al consumidor
+    kafka_recepcion_consumer = KafkaConsumer('recepcion', db)  # Pasa la base de datos
+    kafka_recepcion_thread = threading.Thread(target=kafka_recepcion_consumer.start_consuming)
+    kafka_recepcion_thread.start()
+
     # Mantiene el servidor gRPC corriendo indefinidamente
     server.wait_for_termination()
 

@@ -105,7 +105,6 @@ def create_producto_blueprint(db):
         # Devuelve los productos en formato JSON
         return jsonify(productos)
 
-        return producto_blueprint
     # Ruta para modificar el stock de un producto
     @producto_blueprint.route('/productos/modificar', methods=['PUT'])
     async def modificar_stock():
@@ -133,10 +132,9 @@ def create_producto_blueprint(db):
         except Exception as e:
             return jsonify({'error': str(e)}), 500
 
-        return producto_blueprint
 
     # Ruta para dar de alta un nuevo producto
-    @producto_blueprint.route('/productos/alta', methods=['POST'])
+    @producto_blueprint.route('/alta', methods=['POST'])
     def alta_producto():
         """
         Endpoint para dar de alta un nuevo producto.
@@ -159,7 +157,7 @@ def create_producto_blueprint(db):
             # Llamar a la base de datos para insertar el nuevo producto
             cursor = db.get_cursor()
             cursor.execute("""
-                INSERT INTO productos (codigo, nombre, talles, colores, urls, cantidad_stock_proveedor)
+                INSERT INTO productos (codigo, nombre, talle, color, foto, cantidad_stock_proveedor)
                 VALUES (?, ?, ?, ?, ?, ?)
             """, (codigo, nombre, talles, colores, urls, cantidad_stock_proveedor))
 
