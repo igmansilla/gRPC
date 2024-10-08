@@ -133,7 +133,7 @@ def create_producto_blueprint(db):
             return jsonify({'error': str(e)}), 500
 
 
-    # Ruta para dar de alta un nuevo producto
+    # Ruta para dar de alta un nuevo producto# Ruta para dar de alta un nuevo producto
     @producto_blueprint.route('/alta', methods=['POST'])
     def alta_producto():
         """
@@ -144,9 +144,9 @@ def create_producto_blueprint(db):
         # Extraer datos del producto del cuerpo de la solicitud
         codigo = data.get('codigo')
         nombre = data.get('nombre')
-        talles = data.get('talles')
-        colores = data.get('colores')
-        urls = data.get('urls')
+        talles = data.get('talles', [])  # Asegurarse de que sea una lista
+        colores = data.get('colores', [])  # Asegurarse de que sea una lista
+        urls = data.get('urls', [])  # Asegurarse de que sea una lista
         cantidad_stock_proveedor = data.get('cantidad_stock_proveedor')
 
         # Validar que todos los campos necesarios están presentes
@@ -159,7 +159,7 @@ def create_producto_blueprint(db):
             cursor.execute("""
                 INSERT INTO productos (codigo, nombre, talle, color, foto, cantidad_stock_proveedor)
                 VALUES (?, ?, ?, ?, ?, ?)
-            """, (codigo, nombre, talles, colores, urls, cantidad_stock_proveedor))
+            """, (codigo, nombre, ','.join(talles), ','.join(colores), ','.join(urls), cantidad_stock_proveedor))
 
             # Obtener el ID del producto insertado
             producto_id = cursor.lastrowid
@@ -182,5 +182,5 @@ def create_producto_blueprint(db):
 
         except Exception as e:
             return jsonify({'error': str(e)}), 500
-
+        
     return producto_blueprint

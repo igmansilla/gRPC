@@ -4,7 +4,7 @@ class AltaProducto extends LitElement {
   static styles = css`
     h2 {
       text-align: center;
-      color: #4CAF50;
+      color: #4caf50;
     }
 
     form {
@@ -23,7 +23,8 @@ class AltaProducto extends LitElement {
       border-spacing: 0 15px;
     }
 
-    th, td {
+    th,
+    td {
       padding: 10px;
       vertical-align: top;
     }
@@ -33,7 +34,8 @@ class AltaProducto extends LitElement {
       color: #333;
     }
 
-    input[type="text"], input[type="number"] {
+    input[type="text"],
+    input[type="number"] {
       width: 100%;
       padding: 10px;
       border: 1px solid #ccc;
@@ -43,16 +45,17 @@ class AltaProducto extends LitElement {
       background-color: #fff;
     }
 
-    input[type="text"]:focus, input[type="number"]:focus {
+    input[type="text"]:focus,
+    input[type="number"]:focus {
       outline: none;
-      border-color: #4CAF50;
+      border-color: #4caf50;
       box-shadow: 0 0 5px rgba(76, 175, 80, 0.4);
     }
 
     button {
       padding: 10px 20px;
       font-size: 16px;
-      background-color: #4CAF50;
+      background-color: #4caf50;
       color: white;
       border: none;
       border-radius: 4px;
@@ -67,7 +70,6 @@ class AltaProducto extends LitElement {
     td[colspan="2"] {
       text-align: center;
     }
-
   `;
 
   render() {
@@ -77,27 +79,62 @@ class AltaProducto extends LitElement {
         <table>
           <tr>
             <td><label for="codigo">Código:</label></td>
-            <td><input type="text" id="codigo" required></td>
+            <td><input type="text" id="codigo" required /></td>
           </tr>
           <tr>
             <td><label for="nombre">Nombre:</label></td>
-            <td><input type="text" id="nombre" required></td>
+            <td><input type="text" id="nombre" required /></td>
           </tr>
           <tr>
-            <td><label for="talles">Talles (separados por coma):</label></td>
-            <td><input type="text" id="talles" required></td>
+            <td><label for="talles">Talles:</label></td>
+            <td>
+              <select id="talles" required multiple>
+                <option value="S">S</option>
+                <option value="M">M</option>
+                <option value="L">L</option>
+                <option value="XL">XL</option>
+              </select>
+            </td>
           </tr>
           <tr>
-            <td><label for="colores">Colores (separados por coma):</label></td>
-            <td><input type="text" id="colores" required></td>
+            <td><label for="colores">Colores:</label></td>
+            <td>
+              <select id="colores" required multiple>
+                <option value="rojo">Rojo</option>
+                <option value="azul">Azul</option>
+                <option value="verde">Verde</option>
+                <option value="negro">Negro</option>
+              </select>
+            </td>
           </tr>
           <tr>
-            <td><label for="urls">URLs (separadas por coma):</label></td>
-            <td><input type="text" id="urls" required></td>
+            <td><label for="urls">URLs:</label></td>
+            <td>
+              <select id="urls" required multiple>
+                <option value="https://ejemplo1.com">
+                  https://ejemplo1.com
+                </option>
+                <option value="https://ejemplo2.com">
+                  https://ejemplo2.com
+                </option>
+                <option value="https://ejemplo3.com">
+                  https://ejemplo3.com
+                </option>
+              </select>
+            </td>
           </tr>
           <tr>
-            <td><label for="cantidad_stock_proveedor">Cantidad Stock:</label></td>
-            <td><input type="number" id="cantidad_stock_proveedor" required min="0"></td>
+            <td>
+              <label for="cantidad_stock_proveedor">Cantidad Stock:</label>
+            </td>
+            <td>
+              <input
+                type="number"
+                id="cantidad_stock_proveedor"
+                required
+                min="0"
+              />
+            </td>
           </tr>
           <tr>
             <td colspan="2" style="text-align: center;">
@@ -111,12 +148,27 @@ class AltaProducto extends LitElement {
 
   async _handleSubmit(event) {
     event.preventDefault();
-    const codigo = this.shadowRoot.querySelector('#codigo').value;
-    const nombre = this.shadowRoot.querySelector('#nombre').value;
-    const talles = this.shadowRoot.querySelector('#talles').value;
-    const colores = this.shadowRoot.querySelector('#colores').value;
-    const urls = this.shadowRoot.querySelector('#urls').value;
-    const cantidad_stock_proveedor = this.shadowRoot.querySelector('#cantidad_stock_proveedor').value;
+    const codigo = this.shadowRoot.querySelector("#codigo").value;
+    const nombre = this.shadowRoot.querySelector("#nombre").value;
+
+    // Obtener los valores seleccionados de talles
+    const talles = Array.from(
+      this.shadowRoot.querySelector("#talles").selectedOptions
+    ).map((option) => option.value);
+
+    // Obtener los valores seleccionados de colores
+    const colores = Array.from(
+      this.shadowRoot.querySelector("#colores").selectedOptions
+    ).map((option) => option.value);
+
+    // Obtener los valores seleccionados de urls
+    const urls = Array.from(
+      this.shadowRoot.querySelector("#urls").selectedOptions
+    ).map((option) => option.value);
+
+    const cantidad_stock_proveedor = this.shadowRoot.querySelector(
+      "#cantidad_stock_proveedor"
+    ).value;
 
     const nuevoProducto = {
       codigo,
@@ -124,25 +176,25 @@ class AltaProducto extends LitElement {
       talles,
       colores,
       urls,
-      cantidad_stock_proveedor
+      cantidad_stock_proveedor,
     };
 
-    const response = await fetch('/alta', {
-      method: 'POST',
+    const response = await fetch("/alta", {
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json'
+        "Content-Type": "application/json",
       },
-      body: JSON.stringify(nuevoProducto)
+      body: JSON.stringify(nuevoProducto),
     });
 
     if (response.ok) {
-      alert('Producto dado de alta exitosamente');
-      this.dispatchEvent(new CustomEvent('producto-actualizado'));
-      this.shadowRoot.querySelector('#alta-producto-form').reset();
+      alert("Producto dado de alta exitosamente");
+      this.dispatchEvent(new CustomEvent("producto-actualizado"));
+      this.shadowRoot.querySelector("#alta-producto-form").reset();
     } else {
-      alert('Error al dar de alta el producto');
+      alert("Error al dar de alta el producto");
     }
   }
 }
 
-customElements.define('alta-producto', AltaProducto);
+customElements.define("alta-producto", AltaProducto);
