@@ -16,30 +16,23 @@ class OrdenDeCompraService:
         """
         cursor = self.db.get_cursor()
         
-        # Validar ítems
         errores, faltantes_stock = self.validar_items(cursor, items)
         
-        # Cambiar el estado y generar observaciones
         estado, observaciones = self.generar_estado_observaciones(errores, faltantes_stock)
+        print("Estado y observaciones generadas:", estado, observaciones)
         
-        # Insertar la orden de compra
         orden_compra_id = self.insertar_orden_compra(cursor, tienda_id, estado, observaciones)
         
-        # Insertar los ítems de la orden de compra
-        self.insertar_items_orden_compra(cursor, orden_compra_id, items)
-        
-        # Actualizar stock solo si no hay artículos faltantes
-        if not faltantes_stock:
-            self.actualizar_stock(cursor, items)
+        if not errores:
+            self.insertar_items_orden_compra(cursor, orden_compra_id, items)
 
-        # Realizar el commit de la transacción
+            if not faltantes_stock:
+                self.actualizar_stock(cursor, items)
+                orden_despacho_id = self.generar_orden_despacho(cursor, tienda_id, orden_compra_id)
+                self.enviar_mensaje_despacho(tienda_id, orden_despacho_id, orden_compra_id)
+
         self.db.commit()
 
-        # Generar y enviar la orden de despacho
-        orden_despacho_id = self.generar_orden_despacho(cursor, tienda_id, orden_compra_id)
-        self.enviar_mensaje_despacho(tienda_id, orden_despacho_id, orden_compra_id)
-
-        # Enviar el mensaje a Kafka para la orden de compra
         self.enviar_mensaje_kafka(tienda_id, orden_compra_id, estado, observaciones, items)
 
         return orden_compra_id
@@ -49,26 +42,59 @@ class OrdenDeCompraService:
     def validar_items(self, cursor, items):
         """Valida los ítems y devuelve errores y artículos faltantes de stock."""
         errores = []
-        faltantes_stock = []  # Lista para los artículos faltantes de stock
-        
+        faltantes_stock = [] 
+        productos_agrupados = {}
+
         for item in items:
-            if item['cantidad'] < 1:
-                errores.append(f"Artículo {item['producto_id']}: cantidad mal informada.")
+            print(f"===> Procesando ítem: {item}")
+            producto_id = item['producto_id']
             
-            # Validar existencia del producto
-            cursor.execute("SELECT cantidad_stock_proveedor FROM productos WHERE codigo = ?", (item['producto_id'],))
-            stock = cursor.fetchone()
-            if not stock:
-                errores.append(f"Artículo {item['producto_id']}: no existe en el inventario.")
+            if item['cantidad'] < 1:
+                error_msg = f"Artículo {producto_id}: cantidad mal informada."
+                errores.append(error_msg)
+                print(f"Error de cantidad: {error_msg}")
+            
+            if producto_id in productos_agrupados:
+                productos_agrupados[producto_id]['cantidad'] += item['cantidad']
             else:
-                if item['cantidad'] > stock[0]:
-                    faltantes_stock.append({
-                        'producto_id': item['producto_id'],
-                        'cantidad_solicitada': item['cantidad'],
+                productos_agrupados[producto_id] = {
+                    'producto_id': producto_id,
+                    'cantidad': item['cantidad']
+                }
+
+        print(f"Productos agrupados: {productos_agrupados}")
+        
+        # Validar el stock de los productos agrupados
+        for producto_id, datos in productos_agrupados.items():
+            print(f"===> Validando stock del producto {producto_id} con cantidad total solicitada: {datos['cantidad']}")
+            
+            # Validar existencia del producto en la base de datos
+            cursor.execute("SELECT cantidad_stock_proveedor FROM productos WHERE codigo = ?", (producto_id,))
+            stock = cursor.fetchone()
+
+            print(f"Stock disponible para producto {producto_id}: {stock}")
+
+            if not stock:
+                error_msg = f"Artículo {producto_id}: no existe en el inventario."
+                errores.append(error_msg)
+                print(f"Error de inventario: {error_msg}")
+            else:
+                # Verificar si hay suficiente stock para la cantidad total solicitada
+                if datos['cantidad'] > stock[0]:
+                    faltante_stock = {
+                        'producto_id': producto_id,
+                        'cantidad_solicitada': datos['cantidad'],
                         'cantidad_disponible': stock[0]
-                    })
+                    }
+                    faltantes_stock.append(faltante_stock)
+                    print(f"Stock insuficiente para {producto_id}: {faltante_stock}")
+
+        print(f"Errores detectados: {errores}")
+        print(f"Faltantes de stock: {faltantes_stock}")
         
         return errores, faltantes_stock
+
+
 
 
     def generar_estado_observaciones(self, errores, faltantes_stock):
@@ -76,11 +102,13 @@ class OrdenDeCompraService:
         estado = 'ACEPTADA'
         if errores:
             observaciones = '; '.join(errores)
+            estado = 'RECHAZADA'
         elif faltantes_stock:
             observaciones = "Artículos faltantes: " + '; '.join([
                 f"{falta['producto_id']}: solicitado {falta['cantidad_solicitada']}, disponible {falta['cantidad_disponible']}"
                 for falta in faltantes_stock
             ])
+            estado = 'PAUSADA'
         else:
             observaciones = ""
 
@@ -102,13 +130,16 @@ class OrdenDeCompraService:
     def insertar_items_orden_compra(self, cursor, orden_compra_id, items):
         """Inserta los ítems de la orden de compra en la base de datos."""
         for item in items:
-            cursor.execute(
-                '''
-                INSERT INTO items_orden_compra (orden_compra_id, producto_id, color, talle, cantidad)
-                VALUES (?, ?, ?, ?, ?)
-                ''', 
-                (orden_compra_id, item['producto_id'], item['color'], item['talle'], item['cantidad'])
-            )
+            if item['cantidad'] > 0: 
+                cursor.execute(
+                    '''
+                    INSERT INTO items_orden_compra (orden_compra_id, producto_id, color, talle, cantidad)
+                    VALUES (?, ?, ?, ?, ?)
+                    ''', 
+                    (orden_compra_id, item['producto_id'], item['color'], item['talle'], item['cantidad'])
+                )
+
+
 
 
     def actualizar_stock(self, cursor, items):
@@ -129,11 +160,11 @@ class OrdenDeCompraService:
         mensaje_kafka = {
             'orden_id': orden_compra_id,
             'tienda_id': tienda_id,
-            'estado': estado,
+            'estado': 'ACEPTADA' if estado == 'PAUSADA' else estado,
             'observaciones': observaciones,
             'items': items
         }
-        self.kafka_producer.send_message(f"solicitudes", mensaje_kafka)  # Enviar al tema de solicitudes
+        self.kafka_producer.send_message(f"solicitudes", mensaje_kafka) 
 
 
     def obtener_ordenes_compra(self):
@@ -143,11 +174,10 @@ class OrdenDeCompraService:
         cursor = self.db.get_cursor()
         cursor.execute('SELECT * FROM ordenes_compra')
         rows = cursor.fetchall()
-        print("Registros de órdenes de compra:", rows)  # Imprime los registros recuperados
+        print("Registros de órdenes de compra:", rows)  
         if not rows:
             print("No se encontraron órdenes de compra.")
 
-        # Convierte a un diccionario si es necesario
         columnas = [column[0] for column in cursor.description]
         return [dict(zip(columnas, row)) for row in rows]
 
@@ -167,11 +197,10 @@ class OrdenDeCompraService:
         cursor.execute('SELECT * FROM productos WHERE id = ?', (articulo_id,))
         articulo = cursor.fetchone()
         
-        # Convertir a un diccionario si el artículo existe
         if articulo:
             columnas = [column[0] for column in cursor.description]
             return dict(zip(columnas, articulo))
-        return None  # Retorna None si el artículo no existe
+        return None  
     def generar_orden_despacho(self, cursor, tienda_id, orden_compra_id):
         """Genera una nueva orden de despacho y devuelve su ID."""
         cursor.execute(
@@ -190,17 +219,16 @@ class OrdenDeCompraService:
         mensaje_despacho = {
             'orden_despacho_id': orden_despacho_id,
             'orden_compra_id': orden_compra_id,
-            'fecha_estimacion_envio': fecha_estimacion_envio.isoformat()  # Convertir a string
+            'fecha_estimacion_envio': fecha_estimacion_envio.isoformat()  
         }
         
-        self.kafka_producer.send_message(f"despacho", mensaje_despacho)  # Enviar al tema de despacho
+        self.kafka_producer.send_message(f"despacho", mensaje_despacho)  
     def marcar_orden_recibida(self, orden_id, despacho_id):
         """
         Marca una orden como recibida en la base de datos.
         """
         cursor = self.db.get_cursor()
         
-       # Verificar que la orden está en estado ACEPTADA y tiene un despacho asociado
         cursor.execute("SELECT estado FROM ordenes_compra WHERE id = ?", (orden_id,))
         resultado = cursor.fetchone()
 
@@ -208,13 +236,12 @@ class OrdenDeCompraService:
             print(f"Orden {orden_id} no existe en la base de datos.")
             return False
 
-        estado = resultado[0]  # Asegúrate de que estás accediendo al índice correcto de la tupla
+        estado = resultado[0] 
 
         if estado != 'ACEPTADA':
             print(f"Orden {orden_id} no puede ser marcada como recibida porque no está en estado ACEPTADA. Está en {estado}")
             return False
 
-        # Actualizar la fecha de recepción en la base de datos
         cursor.execute(
             '''
             UPDATE ordenes_compra 
@@ -224,7 +251,6 @@ class OrdenDeCompraService:
             (orden_id,)
         )
 
-        # Realizar el commit de la transacción
         self.db.commit()
 
         print(f"Orden {orden_id} marcada como recibida con despacho {despacho_id}.")

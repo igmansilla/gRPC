@@ -85,10 +85,8 @@ class NovedadesCasaCentral extends LitElement {
   }
 
   _darDeAltaProducto(producto, tallesSeleccionados, coloresSeleccionados) {
-    // Mostrar el mensaje de alta del producto
     this.mensajeAlta[producto.codigo] = `Producto ${producto.nombre} dado de alta exitosamente con talles: ${tallesSeleccionados.join(', ')} y colores: ${coloresSeleccionados.join(', ')}`;
     
-    // Forzar una actualización para mostrar el mensaje
     this.requestUpdate();
   }
 
@@ -107,18 +105,17 @@ class NovedadesCasaCentral extends LitElement {
         <div class="producto-header">${producto.nombre} (Código: ${producto.codigo})</div>
         
         <label>Talles disponibles:</label>
-        <select multiple id="talles-${producto.codigo}">
+        <select multiple id="talles-${producto.codigo.trim()}">
           ${producto.talles.map(talle => html`<option value="${talle}">${talle}</option>`)}
         </select>
 
         <label>Colores disponibles:</label>
-        <select multiple id="colores-${producto.codigo}">
+        <select multiple id="colores-${producto.codigo.trim()}">
           ${producto.colores.map(color => html`<option value="${color}">${color}</option>`)}
         </select>
 
         <button @click="${() => this._handleAltaProducto(producto)}">Dar de alta producto</button>
 
-        <!-- Mostrar el mensaje de alta si existe -->
         ${this.mensajeAlta[producto.codigo] 
           ? html`<div class="mensaje-alta">${this.mensajeAlta[producto.codigo]}</div>` 
           : ''}

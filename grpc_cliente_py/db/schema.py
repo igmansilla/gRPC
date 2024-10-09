@@ -52,7 +52,7 @@ def create_tables(conn):
             fecha_solicitud TEXT,
             fecha_envio TEXT,         -- Nueva columna: Fecha estimada o real de envío
             fecha_recepcion TEXT,     -- Nueva columna: Fecha en la que se recibió la mercadería
-            estado TEXT CHECK (estado IN ('SOLICITADA', 'RECHAZADA', 'ACEPTADA', 'RECIBIDA')) NOT NULL,
+            estado TEXT CHECK (estado IN ('SOLICITADA', 'RECHAZADA', 'ACEPTADA', 'PAUSADA')) NOT NULL,
             observaciones TEXT,
             FOREIGN KEY (tienda_id) REFERENCES tiendas(codigo)
         );

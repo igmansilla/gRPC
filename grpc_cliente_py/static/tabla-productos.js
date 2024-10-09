@@ -55,8 +55,8 @@ class TablaProductos extends LitElement {
               <td>${producto.id}</td>
               <td>${producto.nombre}</td>
               <td>${producto.codigo}</td>
-              <td><input type="number" id="cantidad-${producto.id}" value="${producto.cantidad_stock_proveedor}" min="0"></td>
-              <td><button @click="${() => this.modificarStock(producto.id)}">Actualizar</button></td>
+              <td><input type="number" id="cantidad-${producto.codigo}" value="${producto.cantidad_stock_proveedor}" min="0"></td>
+              <td><button @click="${() => this.modificarStock(producto.codigo)}">Actualizar</button></td>
             </tr>
           `)}
         </tbody>
@@ -64,8 +64,8 @@ class TablaProductos extends LitElement {
     `;
   }
 
-  async modificarStock(productoId) {
-    const nuevaCantidad = this.shadowRoot.querySelector(`#cantidad-${productoId}`).value;
+  async modificarStock(productoCodigo) {
+    const nuevaCantidad = this.shadowRoot.querySelector(`#cantidad-${productoCodigo}`).value;
 
     const response = await fetch('/productos/modificar', {
       method: 'PUT',
@@ -73,13 +73,13 @@ class TablaProductos extends LitElement {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        producto_id: productoId,
+        producto_id: productoCodigo,
         nueva_cantidad: nuevaCantidad
       })
     });
 
     if (response.ok) {
-      alert(`Stock del producto ${productoId} actualizado a ${nuevaCantidad}`);
+      alert(`Stock del producto ${productoCodigo} actualizado a ${nuevaCantidad}`);
       this.dispatchEvent(new CustomEvent('producto-actualizado'));
     } else {
       alert('Error al actualizar el stock del producto');
