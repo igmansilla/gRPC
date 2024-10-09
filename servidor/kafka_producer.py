@@ -4,7 +4,7 @@ import json
 class KafkaProducer:
     def __init__(self):
         self.producer_config = {
-            'bootstrap.servers': 'localhost:9092',  # Dirección de tu cluster de Kafka
+            'bootstrap.servers': 'localhost:9092', 
         }
         self.producer = Producer(self.producer_config)
 
@@ -14,7 +14,7 @@ class KafkaProducer:
         """
         try:
             self.producer.produce(topic, value=json.dumps(message).encode('utf-8'))
-            self.producer.flush()  # Asegura que el mensaje se envíe inmediatamente
+            self.producer.flush()  
             print(f"Mensaje enviado al tema '{topic}': {message}")
         except KafkaException as e:
             print(f"Error al enviar mensaje: {e}")

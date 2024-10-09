@@ -20,8 +20,8 @@ class UsuariosComponent extends LitElement {
       tienda_id: "",
       habilitado: false,
     };
-    this.editandoUsuario = false; // Para saber si estamos en modo edición
-    this.usuarioAEditar = null; // Usuario seleccionado para editar
+    this.editandoUsuario = false; 
+    this.usuarioAEditar = null;
   }
 
   async connectedCallback() {
@@ -29,7 +29,7 @@ class UsuariosComponent extends LitElement {
     await this.loadUsuarios();
   }
 
-  // Cargar usuarios desde el servidor
+  
   async loadUsuarios() {
     try {
       const response = await fetch("/listUsuarios");
@@ -42,7 +42,7 @@ class UsuariosComponent extends LitElement {
     }
   }
 
-  // Crear un nuevo usuario
+ 
   async createUsuario() {
     try {
       const response = await fetch("/createUsuario", {
@@ -53,34 +53,34 @@ class UsuariosComponent extends LitElement {
         body: JSON.stringify(this.nuevoUsuario),
       });
       if (!response.ok) throw new Error("Error al crear el usuario");
-      await this.loadUsuarios(); // Recargar la lista de usuarios
-      this.resetFormulario(); // Reiniciar el formulario
+      await this.loadUsuarios(); 
+      this.resetFormulario(); 
     } catch (error) {
       console.error("Error al crear el usuario:", error);
     }
   }
 
-  // Eliminar un usuario
+
   async deleteUsuario(id) {
     try {
       const response = await fetch(`/deleteUsuario/${id}`, {
         method: "DELETE",
       });
       if (!response.ok) throw new Error("Error al eliminar el usuario");
-      await this.loadUsuarios(); // Recargar la lista después de eliminar
+      await this.loadUsuarios(); 
     } catch (error) {
       console.error("Error al eliminar el usuario:", error);
     }
   }
 
-  // Cargar el usuario seleccionado en el formulario para editar
+  
   editarUsuario(usuario) {
     this.editandoUsuario = true;
-    this.usuarioAEditar = { ...usuario }; // Cargar los datos del usuario en un nuevo objeto
-    this.nuevoUsuario = { ...usuario }; // Usamos los mismos campos que en la creación
+    this.usuarioAEditar = { ...usuario };
+    this.nuevoUsuario = { ...usuario }; 
   }
 
-  // Actualizar el usuario seleccionado
+ 
   async updateUsuario() {
     try {
       const response = await fetch(`/updateUsuario/${this.usuarioAEditar.id}`, {
@@ -91,14 +91,13 @@ class UsuariosComponent extends LitElement {
         body: JSON.stringify(this.nuevoUsuario),
       });
       if (!response.ok) throw new Error("Error al actualizar el usuario");
-      await this.loadUsuarios(); // Recargar la lista de usuarios
-      this.resetFormulario(); // Reiniciar el formulario y salir del modo edición
+      await this.loadUsuarios(); 
+      this.resetFormulario(); 
     } catch (error) {
       console.error("Error al actualizar el usuario:", error);
     }
   }
 
-  // Reiniciar el formulario para crear un nuevo usuario o salir del modo edición
   resetFormulario() {
     this.nuevoUsuario = {
       nombreUsuario: "",
@@ -152,7 +151,7 @@ class UsuariosComponent extends LitElement {
     return html`
       <h2>${this.editandoUsuario ? "Editar Usuario" : "Crear Usuario"}</h2>
 
-      <!-- Formulario para crear o editar un usuario -->
+     
       <form
         @submit=${(e) => {
           e.preventDefault();
@@ -204,7 +203,6 @@ class UsuariosComponent extends LitElement {
           : ""}
       </form>
 
-      <!-- Mostrar lista de usuarios -->
       ${this.usuarios?.length > 0
         ? html`
             <table>

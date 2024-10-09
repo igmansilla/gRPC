@@ -1,4 +1,3 @@
-// Importa lit como módulos CommonJS
 import { LitElement, html, css } from "https://cdn.skypack.dev/lit";
 
 class TiendasComponent extends LitElement {
@@ -22,8 +21,8 @@ class TiendasComponent extends LitElement {
       habilitada: false,
       producto_ids: [],
     };
-    this.editIndex = -1; // No hay tienda en modo edición al inicio
-    this.editTienda = {}; // Objeto vacío para almacenar la tienda temporal
+    this.editIndex = -1; 
+    this.editTienda = {}; 
   }
 
   async connectedCallback() {
@@ -43,7 +42,7 @@ class TiendasComponent extends LitElement {
     }
   }
 
-  // Método para crear una nueva tienda
+ 
   async createTienda() {
     try {
       const response = await fetch("/createTienda", {
@@ -54,7 +53,7 @@ class TiendasComponent extends LitElement {
         body: JSON.stringify(this.nuevaTienda),
       });
       if (!response.ok) throw new Error("Error al crear la tienda");
-      await this.loadTiendas(); // Recargar la lista de tiendas
+      await this.loadTiendas();
       this.nuevaTienda = {
         codigo: "",
         direccion: "",
@@ -62,13 +61,13 @@ class TiendasComponent extends LitElement {
         provincia: "",
         habilitada: false,
         producto_ids: [],
-      }; // Reiniciar formulario
+      }; 
     } catch (error) {
       console.error("Error al crear la tienda:", error);
     }
   }
 
-  // Método para actualizar una tienda
+  
   async updateTienda(tienda) {
     try {
       const response = await fetch(`/updateTienda/${tienda.codigo}`, {
@@ -79,37 +78,37 @@ class TiendasComponent extends LitElement {
         body: JSON.stringify(tienda),
       });
       if (!response.ok) throw new Error("Error al actualizar la tienda");
-      await this.loadTiendas(); // Recargar lista
+      await this.loadTiendas();
     } catch (error) {
       console.error("Error al actualizar la tienda:", error);
     }
   }
 
-  // Método para eliminar una tienda
+  
   async deleteTienda(codigo) {
     try {
       const response = await fetch(`/deleteTienda/${codigo}`, {
         method: "DELETE",
       });
       if (!response.ok) throw new Error("Error al eliminar la tienda");
-      await this.loadTiendas(); // Recargar lista
+      await this.loadTiendas(); 
     } catch (error) {
       console.error("Error al eliminar la tienda:", error);
     }
   }
-  // Método para cambiar al modo edición
+  
   editMode(index) {
     this.editIndex = index;
-    this.editTienda = { ...this.tiendas[index] }; // Copia la tienda a editar
+    this.editTienda = { ...this.tiendas[index] }; 
   }
 
-  // Método para cancelar la edición
+  
   cancelEdit() {
-    this.editIndex = -1; // Sale del modo edición
-    this.editTienda = {}; // Limpia la tienda temporal
+    this.editIndex = -1; 
+    this.editTienda = {}; 
   }
 
-  // Método para guardar los cambios (Update)
+  
   async saveTienda() {
     try {
       const response = await fetch(`/updateTienda/${this.editTienda.codigo}`, {
@@ -121,9 +120,9 @@ class TiendasComponent extends LitElement {
       });
       if (!response.ok) throw new Error("Error al actualizar la tienda");
 
-      this.tiendas[this.editIndex] = { ...this.editTienda }; // Actualiza la tienda en la lista
-      this.cancelEdit(); // Sale del modo edición
-      await this.loadTiendas(); // Recarga la lista de tiendas
+      this.tiendas[this.editIndex] = { ...this.editTienda }; 
+      this.cancelEdit();
+      await this.loadTiendas(); 
     } catch (error) {
       console.error("Error al actualizar la tienda:", error);
     }
@@ -168,7 +167,7 @@ class TiendasComponent extends LitElement {
     return html`
       <h2>Lista de Tiendas</h2>
 
-      <!-- Formulario para crear una nueva tienda -->
+     
       <form
         @submit=${(e) => {
           e.preventDefault();
@@ -231,7 +230,7 @@ class TiendasComponent extends LitElement {
                 ${this.tiendas.map(
                   (tienda, index) => html`
                     <tr>
-                      <!-- Si la tienda está en modo edición, muestra un formulario editable -->
+                      
                       ${this.editIndex === index
                         ? html`
                             <td>
@@ -300,7 +299,7 @@ class TiendasComponent extends LitElement {
                             </td>
                           `
                         : html`
-                            <!-- Si no está en edición, muestra los datos normales -->
+                           
                             <td>${tienda.codigo}</td>
                             <td>${tienda.direccion}</td>
                             <td>${tienda.ciudad}</td>

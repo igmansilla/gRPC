@@ -2,14 +2,12 @@ const grpc = require('@grpc/grpc-js');
 const protoLoader = require('@grpc/proto-loader');
 const path = require('path');
 
-// Rutas a los archivos .proto
 const PROTO_PATH_HELLO = path.join(__dirname, 'helloworld.proto');
 const PROTO_PATH_USUARIO = path.join(__dirname, 'usuario.proto');
 const PROTO_PATH_PRODUCTO = path.join(__dirname, 'producto.proto');
 const PROTO_PATH_TIENDA = path.join(__dirname, 'tienda.proto');
 const PROTO_PATH_PRODUCTO_TIENDA = path.join(__dirname, 'producto_tienda.proto');
 
-// Cargar definiciones de los archivos .proto
 const loadProto = (protoPath) => {
   const packageDefinition = protoLoader.loadSync(protoPath, {
     keepCase: true,
@@ -33,7 +31,6 @@ const productoProto = protoDescriptorProducto.ProductoService;
 const tiendaProto = protoDescriptorTienda.TiendaService;
 const productoTiendaProto = protoDescriptorProductoTienda.ProductoTiendaService;
 
-// Crear clientes gRPC
 const greeterClient = new greeterProto('localhost:50051', grpc.credentials.createInsecure());
 const usuarioClient = new usuarioProto('localhost:50051', grpc.credentials.createInsecure());
 const productoClient = new productoProto('localhost:50051', grpc.credentials.createInsecure());

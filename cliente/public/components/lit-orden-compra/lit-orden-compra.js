@@ -102,11 +102,11 @@ class LitOrdenCompra extends LitElement {
 
   constructor() {
     super();
-    this.ordenes = []; // Lista de órdenes de compra
-    this.despachos = []; // Lista de despachos
-    this.mostrarFormulario = false; // Controlar la visibilidad del formulario
+    this.ordenes = []; 
+    this.despachos = []; 
+    this.mostrarFormulario = false; 
     this.tienda_id = "T001";
-    this.estado = "SOLICITADA"; // Estado por defecto
+    this.estado = "SOLICITADA"; 
     this.observaciones = "";
     this.items = [];
     this.productos = [
@@ -125,12 +125,11 @@ class LitOrdenCompra extends LitElement {
         foto: "url/to/fotoB",
       },
     ];
-    this.producto = "Producto A"; // Cambiado al primer producto disponible
-    this.color = "Rojo"; // Cambiado al color del Producto A
-    this.talle = "M"; // Cambiado al talle del Producto A
-    this.cantidad = 1; // Valor por defecto
+    this.producto = "Producto A"; 
+    this.color = "Rojo"; 
+    this.talle = "M"; 
+    this.cantidad = 1; 
 
-    // Cargar las órdenes de compra al iniciar el componente
   }
 
   connectedCallback() {
@@ -142,8 +141,8 @@ class LitOrdenCompra extends LitElement {
     try {
       const response = await fetch("/solicitudes");
       if (response.ok) {
-        this.ordenes = await response.json(); // Actualiza la lista de órdenes
-        await this.fetchDespachos(); // Cargar despachos después de obtener órdenes
+        this.ordenes = await response.json(); 
+        await this.fetchDespachos(); 
       } else {
         console.error(
           "Error al obtener las órdenes de compra:",
@@ -156,7 +155,7 @@ class LitOrdenCompra extends LitElement {
   }
 
   toggleFormulario() {
-    this.mostrarFormulario = !this.mostrarFormulario; // Alternar visibilidad
+    this.mostrarFormulario = !this.mostrarFormulario;
   }
 
   agregarItem() {
@@ -166,8 +165,8 @@ class LitOrdenCompra extends LitElement {
 
     if (selectedProduct) {
       const item = {
-        producto: selectedProduct.nombre, // Captura el nombre del producto
-        producto_id: selectedProduct.id, // Captura el ID del producto
+        producto: selectedProduct.nombre, 
+        producto_id: selectedProduct.id, 
         color: selectedProduct.color,
         talle: selectedProduct.talle,
         cantidad: this.cantidad,
@@ -175,11 +174,11 @@ class LitOrdenCompra extends LitElement {
 
       this.items = [...this.items, item];
 
-      // Limpia los campos después de agregar un ítem
-      this.producto = "Producto A"; // Resetea al valor por defecto
-      this.color = "Rojo"; // Resetea al color por defecto
-      this.talle = "M"; // Resetea al talle por defecto
-      this.cantidad = 1; // Resetea la cantidad al valor por defecto
+     
+      this.producto = "Producto A"; 
+      this.color = "Rojo"; 
+      this.talle = "M"; 
+      this.cantidad = 1; 
     }
   }
 
@@ -193,7 +192,7 @@ class LitOrdenCompra extends LitElement {
       items: this.items,
     };
 
-    // Enviar la orden al backend
+   
     try {
       const response = await fetch("/orden-de-compra", {
         method: "POST",
@@ -204,15 +203,15 @@ class LitOrdenCompra extends LitElement {
       });
 
       if (response.ok) {
-        const data = await response.json(); // Extraer la respuesta JSON del servidor
-        console.log("Orden enviada:", data.message); // Imprimir el mensaje desde el servidor
+        const data = await response.json(); 
+        console.log("Orden enviada:", data.message); 
         alert("Orden de compra enviada correctamente.");
-        this.items = []; // Limpia los ítems después de enviar la orden
-        this.toggleFormulario(); // Ocultar el formulario
-        await this.fetchOrdenes(); // Actualiza la lista de órdenes
+        this.items = []; 
+        this.toggleFormulario();
+        await this.fetchOrdenes();
       } else {
-        const errorData = await response.json(); // Extraer los detalles del error
-        console.error("Error al enviar la orden:", errorData.message); // Imprimir el mensaje de error desde el servidor
+        const errorData = await response.json(); 
+        console.error("Error al enviar la orden:", errorData.message);
         alert("Error al enviar la orden: " + errorData.message);
       }
     } catch (error) {
@@ -222,9 +221,9 @@ class LitOrdenCompra extends LitElement {
 
   async fetchDespachos() {
     try {
-      const response = await fetch("/despachos"); // Supongamos que hay un endpoint para obtener los despachos
+      const response = await fetch("/despachos"); 
       if (response.ok) {
-        this.despachos = await response.json(); // Actualiza la lista de despachos
+        this.despachos = await response.json(); 
       } else {
         console.error("Error al obtener los despachos:", response.status);
       }
@@ -247,7 +246,7 @@ class LitOrdenCompra extends LitElement {
         const data = await response.json();
         console.log("Orden recibida:", data.message);
         alert("Orden marcada como recibida.");
-        await this.fetchOrdenes(); // Actualiza la lista de órdenes
+        await this.fetchOrdenes(); 
       } else {
         const errorData = await response.json();
         console.error(
@@ -273,16 +272,16 @@ class LitOrdenCompra extends LitElement {
               <th>Estado</th>
               <th>Observaciones</th>
               <th>Despacho ID</th>
-              <!-- Nueva columna para el ID de despacho -->
+             
               <th>Fecha Estimación Envío</th>
-              <!-- Nueva columna para la fecha de estimación -->
+             
             </tr>
           </thead>
           <tbody>
             ${this.ordenes.map((orden) => {
               const despacho = this.despachos.find(
                 (d) => d.orden_compra_id === orden.orden_id
-              ); // Encuentra el despacho relacionado
+              ); 
               return html`
                 <tr>
                   <td>${orden.orden_id}</td>
@@ -292,13 +291,13 @@ class LitOrdenCompra extends LitElement {
                   <td>
                     ${despacho ? despacho.orden_despacho_id : "(sin despacho)"}
                   </td>
-                  <!-- Muestra ID de despacho -->
+                 
                   <td>
                     ${despacho
                       ? despacho.fecha_estimacion_envio
                       : "(sin fecha)"}
                   </td>
-                  <!-- Muestra fecha de estimación -->
+                  
                   <td>
                     ${orden.estado === "ACEPTADA" && despacho
                       ? html`<button
@@ -357,10 +356,10 @@ class LitOrdenCompra extends LitElement {
                     const selectedProduct = this.productos.find(
                       (producto) => producto.nombre === e.target.value
                     );
-                    this.producto = e.target.value; // Captura el nombre del producto
+                    this.producto = e.target.value;
                     this.selectedProductoId = selectedProduct
                       ? selectedProduct.id
-                      : ""; // Captura el ID del producto
+                      : ""; 
                   }}"
                 >
                   ${this.productos.map(

@@ -2,7 +2,6 @@ const express = require("express");
 const router = express.Router();
 const { productoTiendaClient } = require("../grpcClient");
 
-// Ruta para manejar la creación de ProductoTienda
 router.post(
   "/createProductoTienda",
   express.urlencoded({ extended: true }),
@@ -33,7 +32,6 @@ router.post(
   }
 );
 
-// Ruta para obtener un ProductoTienda por ID
 router.get("/getProductoTienda/:id", (req, res) => {
   const request = { id: parseInt(req.params.id) };
 
@@ -53,7 +51,6 @@ router.get("/getProductoTienda/:id", (req, res) => {
   });
 });
 
-// Ruta para actualizar un ProductoTienda
 router.post("/updateProductoTienda", express.urlencoded({ extended: true }), (req, res) => {
   const productoTienda = {
     id: parseInt(req.body.id),
@@ -80,7 +77,6 @@ router.post("/updateProductoTienda", express.urlencoded({ extended: true }), (re
   });
 });
 
-// Ruta para eliminar un ProductoTienda
 router.post("/deleteProductoTienda", express.urlencoded({ extended: true }), (req, res) => {
   const request = { id: parseInt(req.body.id) };
 
@@ -100,7 +96,6 @@ router.post("/deleteProductoTienda", express.urlencoded({ extended: true }), (re
   });
 });
 
-// Ruta para listar todos los ProductoTienda
 router.get("/listProductoTiendas", (req, res) => {
   productoTiendaClient.ListProductoTiendas({}, (error, response) => {
     if (error) {

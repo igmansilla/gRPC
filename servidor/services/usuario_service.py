@@ -27,7 +27,6 @@ class UsuarioService(usuario_pb2_grpc.UsuarioServiceServicer):
             )
             return usuario
         else:
-            # Retornar un mensaje con campos vacíos si no se encuentra el usuario
             return usuario_pb2.Usuario()
         
     def UpdateUsuario(self, request, context):

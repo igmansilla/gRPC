@@ -3,21 +3,20 @@ const router = express.Router();
 const { productoClient } = require("../grpcClient");
 const { novedades } = require("../kafka/kafka-consumer");
 
-// Ruta para manejar la creación de productos
 router.post("/createProducto", express.json(), (req, res) => {
 
   console.log(req.body)
 
   const producto = {
-    id: parseInt(req.body.id) ?? 0, // Asignar 0 si id es null o undefined
-    nombre: req.body.nombre ?? "", // Asignar cadena vacía si nombre es null o undefined
-    codigo: req.body.codigo ?? "", // Asignar cadena vacía si codigo es null o undefined
-    talle: req.body.talle ?? "", // Asignar cadena vacía si talle es null o undefined
-    foto: req.body.foto ?? "", // Asignar cadena vacía si foto es null o undefined
-    color: req.body.color ?? "", // Asignar cadena vacía si color es null o undefined
+    id: parseInt(req.body.id) ?? 0, 
+    nombre: req.body.nombre ?? "", 
+    codigo: req.body.codigo ?? "", 
+    talle: req.body.talle ?? "", 
+    foto: req.body.foto ?? "", 
+    color: req.body.color ?? "", 
     tienda_ids: req.body.tienda_ids
     ? req.body?.tienda_ids?.map((id) => parseInt(id))
-    : [], // Asignar array vacío si tienda_ids es null o undefined, o array con el ID si viene como un string sin comas
+    : [], 
   };
   
   productoClient.CreateProducto(producto, (error, response) => {
@@ -32,7 +31,7 @@ router.post("/createProducto", express.json(), (req, res) => {
   });
 });
 
-// Ruta para obtener un producto por código
+
 router.get("/getProducto/:codigo", (req, res) => {
   const request = { codigo: req.params.codigo };
 
@@ -51,10 +50,10 @@ router.get("/novedades", (req, res) => {
 });
 
 
-// Ruta para actualizar un producto
+
 router.put("/updateProducto/:id", express.json(), (req, res) => {
   const producto = {
-    id: parseInt(req.params.id), // Obtener el ID desde la URL
+    id: parseInt(req.params.id), 
     nombre: req.body.nombre,
     codigo: req.body.codigo,
     talle: req.body.talle,
@@ -73,11 +72,11 @@ router.put("/updateProducto/:id", express.json(), (req, res) => {
   });
 });
 
-// Ruta para eliminar un producto
+
 router.delete("/deleteProducto/:id", (req, res) => {
 console.log(req.params.id)
 
-  const request = { id: parseInt(req.params.id) }; // Obtener el ID desde la URL
+  const request = { id: parseInt(req.params.id) }; 
 
   productoClient.DeleteProducto(request, (error, response) => {
     if (error) {
@@ -89,7 +88,7 @@ console.log(req.params.id)
   });
 });
 
-// Ruta para listar todos los productos
+
 router.get("/listProductos", (req, res) => {
   productoClient.ListProductos({}, (error, response) => {
     if (error) {

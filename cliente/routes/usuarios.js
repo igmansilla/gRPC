@@ -2,20 +2,20 @@ const express = require("express");
 const router = express.Router();
 const { usuarioClient } = require("../grpcClient");
 
-// Middleware para comprobar la autenticación
+
 const checkAuthentication = (req, res, next) => {
   if (!req.session.isAuthenticated) {
-    res.redirect("/index"); // Redirige a la pantalla de login si no está autenticado
+    res.redirect("/index"); 
   } else {
-    next(); // Continúa con el procesamiento de la ruta
+    next(); 
   }
 };
 
-// Ruta para manejar la creación de usuarios
+
 router.post(
   "/createUsuario",
   express.urlencoded({ extended: true }),
-  checkAuthentication, // Asegúrate de que el usuario esté autenticado
+  checkAuthentication, 
   (req, res) => {
     const usuario = {
       id: parseInt(req.body.id),
@@ -37,7 +37,7 @@ router.post(
           tienda: null,
         });
       } else {
-        res.redirect("/home"); // Redirige a la página de inicio después de crear un usuario
+        res.redirect("/home"); 
       }
     });
   }
@@ -63,9 +63,9 @@ router.post("/login", express.urlencoded({ extended: true }), (req, res) => {
       response.contrasena === contrasena
     ) {
       console.log("Login exitoso");
-      req.session.isAuthenticated = true; // Establece la autenticación en true
+      req.session.isAuthenticated = true; 
       req.session.save(() => {
-        // Asegura que la sesión se guarda antes de redirigir
+        
         res.redirect("/home");
       });
     } else {
@@ -77,17 +77,17 @@ router.post("/login", express.urlencoded({ extended: true }), (req, res) => {
   });
 });
 
-// Ruta para la página de inicio
+
 router.get("/home", (req, res) => {
   console.log("Usuario autenticado:", req.session.isAuthenticated);
   if (req.session.isAuthenticated) {
-    res.render("home"); // Muestra la vista de inicio si está autenticado
+    res.render("home"); 
   } else {
-    res.redirect("index"); // Redirige al login si no está autenticado
+    res.redirect("index"); 
   }
 });
 
-// Ruta para obtener un usuario por ID
+
 router.get("/getUsuario/:id", checkAuthentication, (req, res) => {
   const request = { id: parseInt(req.params.id) };
 
@@ -111,14 +111,14 @@ router.get("/getUsuario/:id", checkAuthentication, (req, res) => {
   });
 });
 
-// Ruta para actualizar un usuario
+
 router.put(
   "/updateUsuario/:id",
   express.json(),
   checkAuthentication,
   (req, res) => {
     const usuario = {
-      id: parseInt(req.params.id), // Obtener el ID desde la URL
+      id: parseInt(req.params.id), 
       nombreUsuario: req.body.nombreUsuario ?? "",
       contrasena: req.body.contrasena ?? "",
       tienda_id: req.body.tienda_id ?? 0,
@@ -137,9 +137,9 @@ router.put(
   }
 );
 
-// Ruta para eliminar un usuario
+
 router.delete("/deleteUsuario/:id", checkAuthentication, (req, res) => {
-  const request = { id: parseInt(req.params.id) }; // Obtener el ID desde la URL
+  const request = { id: parseInt(req.params.id) }; 
 
   usuarioClient.DeleteUsuario(request, (error, response) => {
     if (error) {
@@ -150,7 +150,7 @@ router.delete("/deleteUsuario/:id", checkAuthentication, (req, res) => {
   });
 });
 
-// Ruta para listar todos los usuarios
+
 router.get("/listUsuarios", checkAuthentication, (req, res) => {
   usuarioClient.ListUsuarios({}, (error, response) => {
     if (error) {
@@ -163,14 +163,14 @@ router.get("/listUsuarios", checkAuthentication, (req, res) => {
 
     res.json({
       message: "Usuarios obtenidos",
-      usuarios: response.usuarios || [], // Asegúrate de que sea un array
+      usuarios: response.usuarios || [], 
     });
   });
 });
 
 router.get("/logout", (req, res) => {
-  req.session.isAuthenticated = false; // Desactiva la autenticación
-  res.render("index"); // Redirige al login
+  req.session.isAuthenticated = false; 
+  res.render("index"); 
 });
 
 module.exports = router;

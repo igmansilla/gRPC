@@ -63,7 +63,7 @@ class NovedadesCasaCentral extends LitElement {
   constructor() {
     super();
     this.novedades = [];
-    this.mensajeAlta = {}; // Almacena los mensajes de alta de productos
+    this.mensajeAlta = {};
   }
 
   connectedCallback() {

@@ -8,7 +8,6 @@ class TiendaService(tienda_pb2_grpc.TiendaServiceServicer):
     def CreateTienda(self, request, context):
         cursor = self.db.get_cursor()
         
-        # Primero inserta los datos de la tienda en la tabla 'tiendas'
         cursor.execute(
             """
             INSERT INTO tiendas (codigo, direccion, ciudad, provincia, habilitada) 
@@ -17,7 +16,6 @@ class TiendaService(tienda_pb2_grpc.TiendaServiceServicer):
             (request.codigo, request.direccion, request.ciudad, request.provincia, request.habilitada)
         )
         
-        # Luego inserta las relaciones de producto_ids en la tabla 'tienda_productos' 
         for producto_id in request.producto_ids:
             cursor.execute(
                 """
@@ -27,24 +25,22 @@ class TiendaService(tienda_pb2_grpc.TiendaServiceServicer):
                 (request.codigo, producto_id)
             )
         
-        # Confirma las transacciones
         self.db.commit()
         
-        # Retorna el mismo request como respuesta
         return request
     
     def GetTienda(self, request, context):
         cursor = self.db.get_cursor()
-        cursor.execute("SELECT * FROM tiendas WHERE codigo=?", (request.codigo,))  # Cambiar 'id' por 'codigo'
+        cursor.execute("SELECT * FROM tiendas WHERE codigo=?", (request.codigo,))
         row = cursor.fetchone()
         if row:
             return tienda_pb2.Tienda(
-                codigo=row[0],          # Asignar 'codigo'
-                direccion=row[1],       # Asignar 'direccion'
-                ciudad=row[2],          # Asignar 'ciudad'
-                provincia=row[3],       # Asignar 'provincia'
-                habilitada=row[4],      # Asignar 'habilitada'
-                producto_ids=row[5:]    # Asignar 'producto_ids' (asumiendo que los IDs están en columnas sucesivas)
+                codigo=row[0],          
+                direccion=row[1],       
+                ciudad=row[2],         
+                provincia=row[3],       
+                habilitada=row[4],     
+                producto_ids=row[5:]    
             )
         else:
             return tienda_pb2.Tienda()
@@ -53,14 +49,14 @@ class TiendaService(tienda_pb2_grpc.TiendaServiceServicer):
         cursor = self.db.get_cursor()
         cursor.execute(
             "UPDATE tiendas SET direccion=?, ciudad=?, provincia=?, habilitada=? WHERE codigo=?", 
-            (request.direccion, request.ciudad, request.provincia, request.habilitada, request.codigo)  # Cambiar 'id' por 'codigo'
+            (request.direccion, request.ciudad, request.provincia, request.habilitada, request.codigo) 
         )
         self.db.commit()
         return request
 
     def DeleteTienda(self, request, context):
         cursor = self.db.get_cursor()
-        cursor.execute("DELETE FROM tiendas WHERE codigo=?", (request.codigo,))  # Cambiar 'id' por 'codigo'
+        cursor.execute("DELETE FROM tiendas WHERE codigo=?", (request.codigo,))  
         self.db.commit()
         return request
 
@@ -68,7 +64,6 @@ class TiendaService(tienda_pb2_grpc.TiendaServiceServicer):
     def ListTiendas(self, request, context):
         cursor = self.db.get_cursor()
 
-        # Realiza la consulta para obtener las tiendas y sus productos relacionados
         query = '''
         SELECT 
             t.codigo, t.direccion, t.ciudad, t.provincia, t.habilitada, 
@@ -82,7 +77,6 @@ class TiendaService(tienda_pb2_grpc.TiendaServiceServicer):
 
         tiendas = []
         for row in rows:
-            # Convertir la cadena concatenada de producto_ids a una lista de enteros
             producto_ids = [int(pid) for pid in row[5].split(',')] if row[5] else []
 
             tienda = tienda_pb2.Tienda(
@@ -95,5 +89,4 @@ class TiendaService(tienda_pb2_grpc.TiendaServiceServicer):
             )
             tiendas.append(tienda)
 
-        # Devolver la lista de tiendas en el formato esperado
         return tienda_pb2.TiendaList(tiendas=tiendas)

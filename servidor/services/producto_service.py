@@ -45,7 +45,6 @@ class ProductoService(producto_pb2_grpc.ProductoServiceServicer):
     def ListProductos(self, request, context):
         cursor = self.db.get_cursor()
 
-        # Realiza la consulta para obtener los productos y sus tiendas relacionadas
         query = '''
         SELECT 
             p.id, p.nombre, p.codigo, p.talle, p.foto, p.color,
@@ -60,7 +59,6 @@ class ProductoService(producto_pb2_grpc.ProductoServiceServicer):
 
         productos = []
         for row in rows:
-            # Convertir la cadena concatenada de tienda_ids a una lista
             tienda_ids = row[6].split(',') if row[6] else []
 
             producto = producto_pb2.Producto(
@@ -70,11 +68,10 @@ class ProductoService(producto_pb2_grpc.ProductoServiceServicer):
                 talle=row[3],
                 foto=row[4],
                 color=row[5],
-                tienda_ids=tienda_ids  # Añadir la lista de IDs de tiendas
+                tienda_ids=tienda_ids  
             )
             productos.append(producto)
 
-        # Devolver la lista de productos en el formato esperado
         return producto_pb2.ProductoList(productos=productos)
     
     def crear_producto(self, nombre, codigo, talle, foto, color, cantidad_stock):
@@ -83,13 +80,10 @@ class ProductoService(producto_pb2_grpc.ProductoServiceServicer):
         """
         cursor = self.db.get_cursor()
 
-        # Insertar el nuevo producto
         producto_id = self.insertar_producto(cursor, nombre, codigo, talle, foto, color, cantidad_stock)
 
-        # Enviar el mensaje a Kafka
         self.enviar_mensaje_kafka(producto_id, codigo, talle, color, foto)
 
-        # Realizar el commit de la transacción
         self.db.commit()
 
         return producto_id
@@ -114,4 +108,4 @@ class ProductoService(producto_pb2_grpc.ProductoServiceServicer):
             'color': color,
             'foto': foto
         }
-        self.kafka_producer.send_message("/novedades", mensaje_kafka)  # Enviar al tema de novedades
+        self.kafka_producer.send_message("/novedades", mensaje_kafka)  

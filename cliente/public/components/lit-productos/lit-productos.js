@@ -4,17 +4,17 @@ class ProductosComponent extends LitElement {
   static get properties() {
     return {
       productos: { type: Array },
-      editIndex: { type: Number }, // Índice del producto en edición
-      editProducto: { type: Object }, // Producto temporal para editar
-      nuevoProducto: { type: Object }, // Nuevo producto para crear
+      editIndex: { type: Number },
+      editProducto: { type: Object }, 
+      nuevoProducto: { type: Object },
     };
   }
 
   constructor() {
     super();
     this.productos = [];
-    this.editIndex = -1; // No hay producto en edición por defecto
-    this.editProducto = {}; // Objeto vacío para almacenar el producto a editar
+    this.editIndex = -1;
+    this.editProducto = {};
     this.nuevoProducto = {
       nombre: "",
       codigo: "",
@@ -25,7 +25,7 @@ class ProductosComponent extends LitElement {
     };
   }
 
-  // Crea un nuevo producto
+  
   async createProducto() {
     try {
       const response = await fetch("/createProducto", {
@@ -36,7 +36,7 @@ class ProductosComponent extends LitElement {
         body: JSON.stringify(this.nuevoProducto),
       });
       if (!response.ok) throw new Error("Error al crear el producto");
-      await this.loadProductos(); // Recargar la lista de productos después de la creación
+      await this.loadProductos(); 
       this.nuevoProducto = {
         nombre: "",
         codigo: "",
@@ -44,14 +44,13 @@ class ProductosComponent extends LitElement {
         foto: "",
         color: "",
         tienda_ids: [],
-      }; // Reiniciar el formulario
+      }; 
       console.log(this.nuevoProducto);
     } catch (error) {
       console.error("Error al crear el producto:", error);
     }
   }
 
-  // Elimina un producto
   async deleteProducto(id) {
     debugger;
     try {
@@ -59,25 +58,25 @@ class ProductosComponent extends LitElement {
         method: "DELETE",
       });
       if (!response.ok) throw new Error("Error al eliminar el producto");
-      await this.loadProductos(); // Recargar la lista después de eliminar
+      await this.loadProductos(); 
     } catch (error) {
       console.error("Error al eliminar el producto:", error);
     }
   }
 
-  // Método para cambiar al modo edición
+  
   editMode(index) {
     this.editIndex = index;
-    this.editProducto = { ...this.productos[index] }; // Copia el producto a editar
+    this.editProducto = { ...this.productos[index] }; 
   }
 
-  // Método para cancelar la edición
+ 
   cancelEdit() {
     this.editIndex = -1;
-    this.editProducto = {}; // Limpia el objeto temporal de edición
+    this.editProducto = {};
   }
 
-  // Método para guardar los cambios (Update)
+  
   async saveProducto() {
     debugger
     try {
@@ -93,9 +92,9 @@ class ProductosComponent extends LitElement {
       );
       if (!response.ok) throw new Error("Error al actualizar el producto");
 
-      this.productos[this.editIndex] = { ...this.editProducto }; // Actualiza la lista de productos
-      this.cancelEdit(); // Sale del modo edición
-      await this.loadProductos(); // Recargar lista de productos
+      this.productos[this.editIndex] = { ...this.editProducto };
+      this.cancelEdit(); 
+      await this.loadProductos(); 
     } catch (error) {
       console.error("Error al actualizar el producto:", error);
     }
@@ -159,7 +158,7 @@ class ProductosComponent extends LitElement {
     return html`
       <h2>Lista de Productos</h2>
 
-      <!-- Formulario para crear un nuevo producto -->
+      
       <form
         @submit=${(e) => {
           e.preventDefault();

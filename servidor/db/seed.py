@@ -1,7 +1,6 @@
 def insert_test_data(conn):
     cursor = conn.cursor()
     
-    # Insertar usuarios
     queries = [
         '''
         INSERT INTO usuarios (nombre_usuario, contrasena, tienda_id, nombre, apellido, habilitado)
@@ -16,7 +15,6 @@ def insert_test_data(conn):
         print(f"Ejecutando consulta: {query}")
         cursor.execute(query)
     
-    # Insertar productos
     queries = [
         '''
        INSERT INTO productos (nombre, codigo, talle, foto, color, cantidad_stock_proveedor)
@@ -29,7 +27,6 @@ def insert_test_data(conn):
         print(f"Ejecutando consulta: {query}")
         cursor.execute(query)
     
-    # Insertar tiendas
     queries = [
         '''
         INSERT INTO tiendas (codigo, direccion, ciudad, provincia, habilitada)
@@ -44,7 +41,6 @@ def insert_test_data(conn):
         print(f"Ejecutando consulta: {query}")
         cursor.execute(query)
     
-    # Insertar producto_tienda
     queries = [
         '''
         INSERT INTO producto_tienda (producto_id, tienda_id, color, talle, cantidad)

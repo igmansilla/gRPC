@@ -1,23 +1,23 @@
 import json
 from confluent_kafka import Consumer, KafkaError, KafkaException
-from services.orden_de_compra_service import OrdenDeCompraService  # Importa el servicio de órdenes de compra
+from services.orden_de_compra_service import OrdenDeCompraService  
 
 class KafkaConsumer:
     def __init__(self, topic, db):
         self.topic = topic
         self.consumer_config = {
-            'bootstrap.servers': 'localhost:9092',  # Dirección de tu cluster de Kafka
+            'bootstrap.servers': 'localhost:9092',  
             'group.id': 'grupo-consumidores',
             'auto.offset.reset': 'earliest'
         }
         self.consumer = Consumer(self.consumer_config)
         self.consumer.subscribe([self.topic])
-        self.orden_compra_service = OrdenDeCompraService(db)  # Instancia el servicio de órdenes de compra con la base de datos
+        self.orden_compra_service = OrdenDeCompraService(db) 
 
     def start_consuming(self):
         try:
             while True:
-                msg = self.consumer.poll(timeout=1.0)  # Poll con timeout de 1 segundo
+                msg = self.consumer.poll(timeout=1.0) 
                 
                 if msg is None:
                     continue
@@ -28,12 +28,10 @@ class KafkaConsumer:
                     else:
                         raise KafkaException(msg.error())
                 else:
-                    # Decodifica el mensaje y procesa los datos
                     try:
                         data = json.loads(msg.value().decode('utf-8'))
                         print(f"Mensaje recibido: {data}")
                         
-                        # Procesar el mensaje usando el servicio de órdenes de compra
                         self.process_message(data)
                     
                     except json.JSONDecodeError as e:
@@ -49,14 +47,12 @@ class KafkaConsumer:
         Procesa los mensajes recibidos de Kafka.
         """
         try:
-            # Determina si el mensaje es de orden de compra o de recepción
-            if 'tienda_id' in message:  # Mensaje de orden de compra
+            if 'tienda_id' in message:  
                 tienda_id = message['tienda_id']
                 estado = message['estado']
                 observaciones = message.get('observaciones', None)
                 items = message['items']
 
-                # Llama al servicio de orden de compra para crear la orden y guardar los ítems
                 orden_id = self.orden_compra_service.crear_orden_compra(
                     tienda_id=tienda_id,
                     estado=estado,
@@ -66,11 +62,10 @@ class KafkaConsumer:
 
                 print(f"Orden de compra creada con ID: {orden_id}")
 
-            elif 'orden_id' in message and 'despacho_id' in message:  # Mensaje de recepción
+            elif 'orden_id' in message and 'despacho_id' in message:  
                 orden_id = message['orden_id']
                 despacho_id = message['despacho_id']
 
-                # Marca la orden como recibida
                 self.orden_compra_service.marcar_orden_recibida(orden_id, despacho_id)
 
         except KeyError as e:
@@ -80,6 +75,6 @@ class KafkaConsumer:
 
 
 if __name__ == '__main__':
-    topic = 'orden-de-compra'  # Cambia esto al nombre de tu topic
+    topic = 'orden-de-compra'  
     kafka_consumer = KafkaConsumer(topic)
     kafka_consumer.start_consuming()

@@ -151,17 +151,14 @@ class AltaProducto extends LitElement {
     const codigo = this.shadowRoot.querySelector("#codigo").value;
     const nombre = this.shadowRoot.querySelector("#nombre").value;
 
-    // Obtener los valores seleccionados de talles
     const talles = Array.from(
       this.shadowRoot.querySelector("#talles").selectedOptions
     ).map((option) => option.value);
 
-    // Obtener los valores seleccionados de colores
     const colores = Array.from(
       this.shadowRoot.querySelector("#colores").selectedOptions
     ).map((option) => option.value);
 
-    // Obtener los valores seleccionados de urls
     const urls = Array.from(
       this.shadowRoot.querySelector("#urls").selectedOptions
     ).map((option) => option.value);

@@ -1,11 +1,10 @@
-# services/orden_de_compra_service.py
-from kafka_producer import KafkaProducer  # Importa el productor de Kafka
+from kafka_producer import KafkaProducer  
 from datetime import datetime, timedelta
 
 class OrdenDeCompraService:
     def __init__(self, db):
         self.db = db
-        self.kafka_producer = KafkaProducer()  # Instancia del productor de Kafka
+        self.kafka_producer = KafkaProducer()  
 
     def crear_orden_compra(self, tienda_id, estado, observaciones, items): 
         """
@@ -64,11 +63,9 @@ class OrdenDeCompraService:
 
         print(f"Productos agrupados: {productos_agrupados}")
         
-        # Validar el stock de los productos agrupados
         for producto_id, datos in productos_agrupados.items():
             print(f"===> Validando stock del producto {producto_id} con cantidad total solicitada: {datos['cantidad']}")
             
-            # Validar existencia del producto en la base de datos
             cursor.execute("SELECT cantidad_stock_proveedor FROM productos WHERE codigo = ?", (producto_id,))
             stock = cursor.fetchone()
 
@@ -79,7 +76,6 @@ class OrdenDeCompraService:
                 errores.append(error_msg)
                 print(f"Error de inventario: {error_msg}")
             else:
-                # Verificar si hay suficiente stock para la cantidad total solicitada
                 if datos['cantidad'] > stock[0]:
                     faltante_stock = {
                         'producto_id': producto_id,
